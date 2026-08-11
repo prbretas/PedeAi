@@ -13,13 +13,35 @@ Inclui: página de cardápio, carrinho, checkout, chatbot com IA (Zeca) e painel
 
 ---
 
-## Pré-requisitos
+## Como tudo se conecta (arquitetura)
 
-Antes de começar, você precisa criar contas (todas gratuitas):
+```
+                        ┌──────────────────────────────────┐
+                        │         SUPABASE (banco)          │
+                        │  tabelas: produtos, clientes,     │
+                        │  pedidos, pedido_itens             │
+                        └────────────┬─────────────────────┘
+                                     │ REST API
+                                     ▼
+┌─────────────┐    HTTP POST    ┌─────────────────────────────┐
+│  SITE HTML  │ ──────────────► │         n8n (3 workflows)    │
+│  (cliente)  │ ◄────────────── │                              │
+└─────────────┘    JSON resp    │  1. webhook/chat → Groq IA   │
+                                │  2. webhook/pedido → Supabase│
+                                │  3. webhook/produtos → Supa. │
+                                └─────────────────────────────┘
+```
+
+**Cada workflow é independente.** Eles NÃO se comunicam entre si.
+O site (HTML) é quem chama cada webhook conforme a ação do usuário.
+
+---
+
+## Pré-requisitos (contas gratuitas)
 
 | Serviço | URL | Para quê |
 |---------|-----|----------|
-| n8n Cloud | https://n8n.io | Automação dos workflows |
+| n8n Cloud | https://app.n8n.cloud | Automação dos workflows |
 | Groq | https://console.groq.com | API de IA para o chatbot |
 | Supabase | https://supabase.com | Banco de dados na nuvem |
 
@@ -31,7 +53,7 @@ Antes de começar, você precisa criar contas (todas gratuitas):
 2. Crie uma conta (pode usar Google)
 3. Vá em **API Keys** → **Create API Key**
 4. Copie a chave (começa com `gsk_...`)
-5. Guarde essa chave — você vai usar no n8n
+5. Guarde — vai usar na ETAPA 3
 
 ---
 
@@ -40,141 +62,164 @@ Antes de começar, você precisa criar contas (todas gratuitas):
 ### 2.1 Criar o projeto
 1. Acesse https://supabase.com → crie conta
 2. Clique em **New Project**
-3. Nome: `pedeai` (ou o que preferir)
+3. Nome: `PedeAi`
 4. Escolha uma senha para o banco
-5. Região: escolha a mais próxima (ex: South America)
-6. Aguarde ~2 minutos o projeto ser criado
+5. Região: escolha a mais próxima
+6. Aguarde ~2 minutos
 
 ### 2.2 Criar as tabelas
 1. No painel do Supabase, clique em **SQL Editor** (menu lateral)
 2. Clique em **New Query**
-3. Abra o arquivo `database/schema.sql` do projeto
-4. Copie TODO o conteúdo e cole no SQL Editor
-5. Clique em **Run** (botão verde)
-6. Deve aparecer "Success. No rows returned" — está certo!
+3. Abra o arquivo `database/schema.sql` do projeto, copie TODO o conteúdo
+4. Cole no SQL Editor e clique **Run**
+5. Deve aparecer "Success" — está certo!
 
 ### 2.3 Inserir produtos iniciais
-1. Ainda no SQL Editor, clique em **New Query**
-2. Abra o arquivo `database/seed.sql`
-3. Copie e cole no editor
-4. Clique em **Run**
-5. Agora você tem 10 produtos cadastrados
+1. No SQL Editor, clique em **New Query** novamente
+2. Abra o arquivo `database/seed.sql`, copie e cole
+3. Clique **Run**
+4. Agora tem 10 produtos no banco
 
-### 2.4 Copiar as credenciais
-1. Vá em **Settings** (engrenagem no menu lateral)
-2. Clique em **API**
-3. Copie e anote:
-   - **Project URL**: algo como `https://abc123xyz.supabase.co`
-   - **anon public key**: a chave longa que começa com `eyJ...`
+### 2.4 Pegar as credenciais do Supabase
+
+1. No menu lateral, vá em **Integrations** → **Data API**
+2. Na aba **Overview**, copie a URL (sem o `/rest/v1/`):
+   - **SUPABASE_URL** = `https://mwfjicgnxcvhcgamkskd.supabase.co`
+3. Clique na aba **Settings** (ao lado de Overview)
+4. Copie a chave **anon (public)** — é a que começa com `eyJ...`
+   - **SUPABASE_KEY** = `eyJhbGciOi...` (a chave longa)
+
+> **Alternativa:** Settings (engrenagem) → API Keys → copie a "anon" key
 
 ---
 
 ## ETAPA 3: Configurar o n8n (Workflows)
 
-### 3.1 Criar variáveis de ambiente
-1. No n8n, vá em **Settings** → **Variables**
-2. Crie duas variáveis:
-   - Nome: `SUPABASE_URL` → Valor: sua Project URL do Supabase
-   - Nome: `SUPABASE_KEY` → Valor: sua anon public key do Supabase
+### 3.1 Criar variáveis de ambiente no n8n
 
-### 3.2 Importar o workflow do Chatbot
-1. No n8n, clique em **Add workflow** → **Import from File**
-2. Selecione o arquivo `workflow-chatbot-lanchonete.json`
-3. O workflow vai aparecer com 3 nós
-4. Clique no nó **"Chamar Groq LLM"**
-5. No campo Headers → Authorization → Value:
-   - Substitua `SUA_API_KEY_GROQ` pela sua chave do Groq
-   - Deve ficar: `Bearer gsk_xxxxxxx` (com Bearer na frente!)
-6. **Ative o workflow** (toggle no canto superior direito)
-7. Copie a **Production URL** que aparece no nó Webhook
+**IMPORTANTE: Faça isso ANTES de importar os workflows!**
 
-### 3.3 Importar o workflow de Pedidos
-1. Importe o arquivo `workflow-pedidos.json`
-2. Os nós já usam `$env.SUPABASE_URL` e `$env.SUPABASE_KEY` (configurados na 3.1)
+1. No n8n, vá em **Settings** (engrenagem no canto inferior esquerdo)
+2. Clique em **Variables**
+3. Crie as variáveis:
+
+| Nome | Valor |
+|------|-------|
+| `SUPABASE_URL` | `https://mwfjicgnxcvhcgamkskd.supabase.co` |
+| `SUPABASE_KEY` | Sua anon key (eyJ...) |
+
+### 3.2 Importar os 3 workflows
+
+Cada workflow é um arquivo JSON independente. Importe um por vez:
+
+**Workflow 1 — Chatbot (Zeca com IA)**
+1. No n8n, clique em **+ Add workflow** → **Import from File**
+2. Selecione: `workflow-chatbot-lanchonete.json`
+3. Abra o nó **"Chamar Groq LLM"**
+4. No header Authorization, substitua `SUA_API_KEY_GROQ` pela sua chave Groq:
+   - Deve ficar: `Bearer gsk_xxxxxxxxxxxxxxx`
+5. **Ative o workflow** (toggle superior direito)
+6. Copie a **Production URL** do nó Webhook (ex: `https://...n8n.cloud/webhook/chat`)
+
+**Workflow 2 — Pedidos**
+1. Importe: `workflow-pedidos.json`
+2. Nenhuma configuração extra necessária (usa as variáveis de ambiente)
 3. **Ative o workflow**
-4. Copie a **Production URL** do nó Webhook
+4. Copie a **Production URL** (ex: `https://...n8n.cloud/webhook/pedido`)
 
-### 3.4 Importar o workflow de Produtos (API)
-1. Importe o arquivo `workflow-produtos-api.json`
-2. Também já usa as variáveis de ambiente
+**Workflow 3 — Produtos (API CRUD)**
+1. Importe: `workflow-produtos-api.json`
+2. Nenhuma configuração extra necessária
 3. **Ative o workflow**
-4. Copie a **Production URL** do nó Webhook
+4. Copie a **Production URL** (ex: `https://...n8n.cloud/webhook/produtos`)
 
-### 3.5 Resumo das URLs que você terá
+### 3.3 Resumo — o que cada workflow faz
 
-| Workflow | URL (exemplo) | Função |
-|----------|---------------|--------|
-| Chatbot | `https://seu-n8n.app.n8n.cloud/webhook/chat` | Chat com IA |
-| Pedidos | `https://seu-n8n.app.n8n.cloud/webhook/pedido` | Receber pedidos |
-| Produtos | `https://seu-n8n.app.n8n.cloud/webhook/produtos` | CRUD produtos |
+| Arquivo | Webhook path | Função |
+|---------|-------------|--------|
+| `workflow-chatbot-lanchonete.json` | `/webhook/chat` | Recebe mensagem → envia para Groq → retorna resposta da IA |
+| `workflow-pedidos.json` | `/webhook/pedido` | Recebe pedido → salva cliente + pedido + itens no Supabase |
+| `workflow-produtos-api.json` | `/webhook/produtos` | Recebe ação → lista/cria/atualiza/exclui produtos no Supabase |
+
+**Os workflows NÃO se comunicam entre si.** Cada um é chamado separadamente pelo site.
+
+### 3.4 Onde colocar a API key do Groq
+
+A chave do Groq vai APENAS no workflow do chatbot:
+- Nó: **"Chamar Groq LLM"**
+- Campo: Headers → Authorization → Value
+- Formato: `Bearer gsk_SUA_CHAVE_AQUI`
+
+A chave do Supabase vai nas **variáveis de ambiente** do n8n (não precisa editar nenhum nó manualmente).
 
 ---
 
 ## ETAPA 4: Rodar o Site (Frontend)
 
-### 4.1 Servir os arquivos localmente
+### 4.1 Servir os arquivos com servidor local
 
-O site NÃO pode ser aberto com duplo clique (file://). Precisa de um servidor local.
+O site NÃO pode ser aberto com duplo clique (file://). Precisa de um servidor:
 
-**Opção A — Python (recomendado, já vem no Windows com Anaconda):**
 ```bash
 cd "C:\Users\philippe.bretas\Documents\KIRO REP\AULA-N8N-03082026"
 python -m http.server 8080
 ```
 
-**Opção B — Node.js:**
-```bash
-npx http-server . -p 8080
-```
+Acesse: **http://localhost:8080**
 
-**Opção C — VS Code com Live Server:**
-- Instale a extensão "Live Server"
-- Clique com botão direito no `index.html` → "Open with Live Server"
-
-Depois acesse: **http://localhost:8080**
-
-### 4.2 Configurar as URLs dos webhooks
+### 4.2 Configurar as URLs dos webhooks no admin
 
 1. Acesse **http://localhost:8080/admin.html**
 2. Login: `admin` / `admin123`
-3. Na aba **⚙️ Config**, cole as 3 URLs:
-   - Webhook Chat → a URL do workflow chatbot
-   - Webhook Pedido → a URL do workflow pedidos
-   - Webhook Produtos → a URL do workflow produtos
+3. Na aba **⚙️ Config**, cole as 3 Production URLs que você copiou:
+   - Webhook Chat → URL do workflow chatbot
+   - Webhook Pedido → URL do workflow pedidos
+   - Webhook Produtos → URL do workflow produtos
 4. Clique **Salvar Configurações**
 
-Pronto! O site está conectado ao n8n e ao Supabase.
+**Pronto! O site agora está conectado ao n8n, que por sua vez está conectado ao Supabase e ao Groq.**
 
 ---
 
-## ETAPA 5: Testar o Sistema
+## ETAPA 5: Testar
 
-### 5.1 Testar o Cardápio
-- Acesse http://localhost:8080
-- Os produtos devem aparecer no grid
-- Se não aparecerem, verifique se o workflow de Produtos está ativo
+### Chatbot
+1. No site, clique no botão 💬 (canto inferior direito)
+2. Digite "oi" — o Zeca deve responder
 
-### 5.2 Testar o Carrinho e Pedido
-1. Clique em "+ Adicionar" em alguns produtos
-2. Clique em "🛒 Carrinho" no menu
-3. Clique "Finalizar Pedido"
-4. Preencha nome, telefone, endereço
-5. Escolha forma de pagamento
-6. Se escolher "Dinheiro", aparece campo "Troco para quanto?"
-7. Clique "✅ Confirmar Pedido"
-8. Verifique no Supabase → Table Editor → tabela `pedidos`
+### Cardápio
+- Os produtos devem carregar do Supabase automaticamente
+- Se não aparecerem, o fallback local é exibido
 
-### 5.3 Testar o Chatbot (Zeca)
-1. Clique no botão 💬 (canto inferior direito)
-2. Digite "oi" e envie
-3. O Zeca deve responder como atendente
-4. Teste: "qual o cardápio?", "vocês entregam?", "quero fazer um pedido"
+### Fazer um pedido
+1. Adicione produtos ao carrinho
+2. Clique "Finalizar Pedido"
+3. Preencha os dados e confirme
+4. Verifique no Supabase → Table Editor → tabela `pedidos`
 
-### 5.4 Testar o Admin
-1. Acesse http://localhost:8080/admin.html
-2. Aba **📋 Produtos** → crie, edite ou exclua produtos
-3. Aba **📦 Pedidos** → veja os pedidos feitos e altere o status
-4. Aba **💳 Pagamentos** → ative/desative formas de pagamento
+### Admin
+1. Acesse `/admin.html`
+2. Crie/edite/exclua produtos
+3. Acompanhe pedidos e mude o status
+
+---
+
+## Resumo visual das credenciais
+
+```
+┌────────────────────────────────────────────────┐
+│  ONDE FICA CADA CHAVE                           │
+├────────────────────────────────────────────────┤
+│  Groq (gsk_...)     → nó "Chamar Groq LLM"     │
+│                       no workflow do chatbot     │
+│                                                  │
+│  Supabase URL       → variável n8n SUPABASE_URL │
+│  Supabase Key       → variável n8n SUPABASE_KEY │
+│                                                  │
+│  Production URLs    → admin.html (aba Config)    │
+│  dos 3 webhooks       salva no localStorage      │
+└────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -183,87 +228,49 @@ Pronto! O site está conectado ao n8n e ao Supabase.
 ```
 PedeAí/
 ├── index.html                      ← Site do cliente (cardápio + carrinho)
-├── admin.html                      ← Painel do admin (produtos, pedidos)
+├── admin.html                      ← Painel do admin (login: admin/admin123)
 ├── cliente_chat.html               ← Chat standalone (versão alternativa)
 ├── css/
-│   ├── style.css                   ← Estilos do site
+│   ├── style.css                   ← Visual estilo iFood (vermelho/branco)
 │   └── admin.css                   ← Estilos do admin
 ├── js/
-│   ├── app.js                      ← Lógica do site (carrinho, chat)
+│   ├── app.js                      ← Lógica do site (carrinho, chat, pedidos)
 │   └── admin.js                    ← Lógica do admin (CRUD, login)
+├── img/
+│   └── placeholder.svg             ← Imagem padrão quando produto sem foto
 ├── database/
 │   ├── schema.sql                  ← Cria tabelas no Supabase
 │   ├── seed.sql                    ← Insere produtos iniciais
 │   └── SETUP-SUPABASE.md           ← Guia rápido do Supabase
-├── workflow-chatbot-lanchonete.json ← Workflow n8n: chatbot IA
-├── workflow-pedidos.json            ← Workflow n8n: receber pedidos
+├── workflow-chatbot-lanchonete.json ← Workflow n8n: chatbot com Groq
+├── workflow-pedidos.json            ← Workflow n8n: salvar pedidos
 ├── workflow-produtos-api.json       ← Workflow n8n: CRUD produtos
-├── melhoriasdoprojeto.md            ← Ideias futuras
-├── historico-implementacoes.md      ← O que já foi feito
-└── GUIA-COMPLETO.md                 ← Este arquivo
-```
-
----
-
-## Fluxo de Dados (como tudo se conecta)
-
-```
-┌─────────────┐     POST /webhook/chat     ┌─────────────┐     API     ┌────────┐
-│  Site HTML  │ ──────────────────────────► │    n8n      │ ──────────► │  Groq  │
-│  (cliente)  │ ◄────────────────────────── │  (workflow) │ ◄────────── │  (IA)  │
-└─────────────┘     resposta JSON           └─────────────┘             └────────┘
-
-┌─────────────┐     POST /webhook/pedido    ┌─────────────┐   REST API  ┌──────────┐
-│  Checkout   │ ──────────────────────────► │    n8n      │ ──────────► │ Supabase │
-│  (pedido)   │ ◄────────────────────────── │  (workflow) │ ◄────────── │ (Postgres)│
-└─────────────┘     confirmação             └─────────────┘             └──────────┘
-
-┌─────────────┐     POST /webhook/produtos  ┌─────────────┐   REST API  ┌──────────┐
-│  Admin/Site │ ──────────────────────────► │    n8n      │ ──────────► │ Supabase │
-│ (produtos)  │ ◄────────────────────────── │  (workflow) │ ◄────────── │ (Postgres)│
-└─────────────┘     lista produtos          └─────────────┘             └──────────┘
+├── GUIA-COMPLETO.md                 ← Este arquivo
+├── historico-implementacoes.md      ← Registro do que foi feito
+└── melhoriasdoprojeto.md            ← Ideias futuras
 ```
 
 ---
 
 ## Solução de Problemas
 
-### Erro: "Failed to fetch"
-- **Causa:** CORS ou workflow inativo
-- **Solução:** Ative o workflow no n8n. Se persistir, no nó Webhook do n8n vá em Options → procure por "Response Headers" e adicione: `Access-Control-Allow-Origin: *`
-
-### Produtos não aparecem no site
-- **Causa:** Webhook de produtos não configurado ou inativo
-- **Solução:** Verifique se a URL está correta no admin.html (aba Config) e se o workflow está ativo
-
-### Chatbot repete saudação
-- **Causa:** Histórico não está sendo enviado
-- **Solução:** Verifique se está usando o `index.html` (que tem histórico) e não abrindo via file://
-
-### Pedido não aparece no Supabase
-- **Causa:** Variáveis de ambiente não configuradas
-- **Solução:** No n8n → Settings → Variables → confirme que `SUPABASE_URL` e `SUPABASE_KEY` estão corretos
-
-### Erro 401 no Supabase
-- **Causa:** API key inválida ou expirada
-- **Solução:** Vá no Supabase → Settings → API → copie a anon key novamente
+| Problema | Causa provável | Solução |
+|----------|---------------|---------|
+| "Failed to fetch" | Workflow inativo ou CORS | Ative o workflow. Se persistir, adicione header `Access-Control-Allow-Origin: *` no nó Webhook |
+| Produtos não carregam | URL do webhook errada | Verifique a URL no admin → Config |
+| Chatbot repete saudação | Sem histórico | Use via localhost (não file://) |
+| Pedido não salva no Supabase | Variáveis n8n erradas | Confirme SUPABASE_URL e SUPABASE_KEY em Settings → Variables |
+| Erro 401 no Supabase | Key inválida | Copie novamente a anon key do Supabase |
 
 ---
 
 ## Como Adaptar para Outro Cliente
 
-Para vender o PedeAí para outra lanchonete/trailer:
-
-1. **Produtos:** Mude via admin.html ou diretamente no Supabase
-2. **Nome/Visual:** Edite o `index.html` (nome, cores)
-3. **Chatbot:** Atualize o prompt de sistema no workflow do n8n com:
-   - Nome do estabelecimento
-   - Cardápio atualizado
-   - Horários
-   - Endereço
-   - Bairros atendidos
-4. **Cores:** Edite as variáveis de cor em `css/style.css`
-5. **Pagamento:** Configure via admin.html (aba Pagamentos)
+1. **Produtos:** Edite via admin.html ou Supabase direto
+2. **Visual:** Mude cores em `css/style.css` (variáveis CSS no `:root`)
+3. **Chatbot:** Atualize o prompt no workflow chatbot (nome, cardápio, horários)
+4. **Imagens:** Coloque fotos na pasta `img/` ou use URLs externas
+5. **Pagamento:** Configure via admin (aba Pagamentos)
 
 ---
 
@@ -274,27 +281,14 @@ Para vender o PedeAí para outra lanchonete/trailer:
 | Admin login | `admin` |
 | Admin senha | `admin123` |
 
-⚠️ Para produção, altere a senha no arquivo `js/admin.js` (variáveis `DEFAULT_USER` e `DEFAULT_PASS`).
+⚠️ Para produção, altere no `js/admin.js` (variáveis `DEFAULT_USER` e `DEFAULT_PASS`).
 
 ---
 
 ## Custos
 
-| Serviço | Plano | Limite gratuito |
-|---------|-------|-----------------|
-| n8n Cloud | Starter | 10 dias trial, depois ~€20/mês |
-| Groq | Free | 30 req/min, 14.400 req/dia |
-| Supabase | Free | 500MB banco, 50K req/mês |
-
-**Para manter gratuito:** Você pode instalar o n8n self-hosted (no seu PC ou num servidor) em vez de usar o n8n Cloud.
-
----
-
-## Próximos Passos (ideias futuras)
-
-- [ ] Integração com WhatsApp (via n8n + Evolution API)
-- [ ] Notificação por email quando novo pedido chegar
-- [ ] Painel de dashboard com gráficos de vendas
-- [ ] App PWA (instalar no celular)
-- [ ] Sistema de cupons de desconto
-- [ ] Avaliação do pedido pelo cliente
+| Serviço | Plano gratuito |
+|---------|---------------|
+| n8n Cloud | Trial 14 dias, depois ~€20/mês (ou self-hosted grátis) |
+| Groq | 30 req/min, 14.400 req/dia |
+| Supabase | 500MB banco, 50K req/mês |
