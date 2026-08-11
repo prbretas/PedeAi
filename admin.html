@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - PedeAí</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <!-- Login -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-box">
+      <h2>🍔 Painel Admin</h2>
+      <p>PedeAí - Área Restrita</p>
+      <form onsubmit="doLogin(event)">
+        <div class="form-group">
+          <label>Usuário</label>
+          <input type="text" id="loginUser" required placeholder="admin">
+        </div>
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="loginPass" required placeholder="••••••">
+        </div>
+        <button type="submit" class="btn-primary btn-full">Entrar</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Painel Admin -->
+  <div class="admin-panel" id="adminPanel" style="display:none;">
+    <header class="admin-header">
+      <div class="admin-brand">
+        <span>🍔</span>
+        <h1>Admin - PedeAí</h1>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sair</button>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="admin-tabs">
+      <button class="tab active" onclick="switchTab('config')">⚙️ Config</button>
+      <button class="tab" onclick="switchTab('produtos')">📋 Produtos</button>
+      <button class="tab" onclick="switchTab('pedidos')">📦 Pedidos</button>
+      <button class="tab" onclick="switchTab('pagamentos')">💳 Pagamentos</button>
+    </nav>
+
+    <!-- Tab: Config Webhooks -->
+    <section class="tab-content active" id="tab-config">
+      <h3>Configuração de Webhooks</h3>
+      <p class="hint-text">Cole aqui as Production URLs dos seus workflows n8n.</p>
+      <div class="config-form">
+        <div class="form-group">
+          <label>Webhook Chat (chatbot Zeca)</label>
+          <input type="text" id="adminCfgChat" placeholder="https://...webhook/chat">
+        </div>
+        <div class="form-group">
+          <label>Webhook Pedido (receber pedidos)</label>
+          <input type="text" id="adminCfgOrder" placeholder="https://...webhook/pedido">
+        </div>
+        <div class="form-group">
+          <label>Webhook Produtos (CRUD produtos)</label>
+          <input type="text" id="adminCfgProducts" placeholder="https://...webhook/produtos">
+        </div>
+        <button class="btn-primary" onclick="saveAdminConfig()">
+          Salvar Configurações
+        </button>
+      </div>
+    </section>
+
+    <!-- Tab: Produtos -->
+    <section class="tab-content" id="tab-produtos">
+      <div class="tab-header-row">
+        <h3>Gerenciar Produtos</h3>
+        <button class="btn-primary" onclick="openProductForm()">+ Novo Produto</button>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="productsTable">
+          <thead>
+            <tr>
+              <th>Imagem</th>
+              <th>Nome</th>
+              <th>Preço</th>
+              <th>Descrição</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="productsBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Form produto -->
+      <div class="product-form" id="productForm" style="display:none;">
+        <h4 id="productFormTitle">Novo Produto</h4>
+        <input type="hidden" id="prodEditId">
+        <div class="form-row">
+          <div class="form-group">
+            <label>URL da Imagem</label>
+            <input type="text" id="prodImagem" placeholder="img/nome-produto.jpg ou URL externa">
+          </div>
+          <div class="form-group">
+            <label>Nome</label>
+            <input type="text" id="prodNome" placeholder="X-Burguer" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Preço (R$)</label>
+            <input type="number" id="prodPreco" step="0.50" min="0" required>
+          </div>
+          <div class="form-group">
+            <label>Categoria</label>
+            <select id="prodCategoria">
+              <option value="lanche">Lanche</option>
+              <option value="acompanhamento">Acompanhamento</option>
+              <option value="bebida">Bebida</option>
+              <option value="sobremesa">Sobremesa</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <input type="text" id="prodDesc" placeholder="Ingredientes...">
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" onclick="saveProduct()">Salvar</button>
+          <button class="btn-secondary" onclick="closeProductForm()">Cancelar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab: Pedidos -->
+    <section class="tab-content" id="tab-pedidos">
+      <h3>Gerenciar Pedidos</h3>
+      <div class="pedidos-filters">
+        <button class="filter-btn active" onclick="filterPedidos('todos')">Todos</button>
+        <button class="filter-btn" onclick="filterPedidos('confirmado')">Confirmados</button>
+        <button class="filter-btn" onclick="filterPedidos('preparando')">Preparando</button>
+        <button class="filter-btn" onclick="filterPedidos('entrega')">Em Entrega</button>
+        <button class="filter-btn" onclick="filterPedidos('entregue')">Entregues</button>
+      </div>
+      <div id="pedidosList" class="pedidos-list"></div>
+    </section>
+
+    <!-- Tab: Pagamentos -->
+    <section class="tab-content" id="tab-pagamentos">
+      <h3>Formas de Pagamento</h3>
+      <p class="hint-text">Configure quais formas de pagamento estarão disponíveis.</p>
+      <div class="payment-options">
+        <label class="payment-toggle">
+          <input type="checkbox" id="payPix" checked onchange="savePaymentConfig()">
+          <span>PIX (online)</span>
+        </label>
+        <label class="payment-toggle">
+          <input type="checkbox" id="payCredito" checked onchange="savePaymentConfig()">
+          <span>Cartão Crédito (na entrega)</span>
+        </label>
+        <label class="payment-toggle">
+          <input type="checkbox" id="payDebito" checked onchange="savePaymentConfig()">
+          <span>Cartão Débito (na entrega)</span>
+        </label>
+        <label class="payment-toggle">
+          <input type="checkbox" id="payDinheiro" checked onchange="savePaymentConfig()">
+          <span>Dinheiro (na entrega)</span>
+        </label>
+      </div>
+      <div class="form-group" style="margin-top:20px;">
+        <label>Chave PIX (para pagamento online)</label>
+        <input type="text" id="pixKey" placeholder="email@exemplo.com ou CPF ou telefone">
+      </div>
+      <button class="btn-primary" onclick="savePaymentConfig()">Salvar</button>
+    </section>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

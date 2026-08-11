@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot PedeAí</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a0533 0%, #0d0d2b 50%, #1a0533 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* Top bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .top-bar .logo {
+      color: #ff4500;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    .top-bar .badge {
+      background: #6c3aed;
+      color: #fff;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* Chat container */
+    .chat-container {
+      width: 100%;
+      max-width: 700px;
+      background: #1e1b3a;
+      border-radius: 20px;
+      border: 1px solid #2d2a5e;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 85vh;
+      max-height: 750px;
+    }
+
+    /* Header */
+    .chat-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #2d2a5e;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chat-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #ff6b35, #ff4500);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .bot-info h2 {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .bot-info .status {
+      color: #4ade80;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .bot-info .status::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: #4ade80;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .settings-btn {
+      background: none;
+      border: none;
+      color: #9ca3af;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .settings-btn:hover {
+      background: #2d2a5e;
+    }
+
+    /* Webhook config */
+    .webhook-config {
+      padding: 12px 24px;
+      background: #16132e;
+      border-bottom: 1px solid #2d2a5e;
+      display: none;
+    }
+
+    .webhook-config.visible {
+      display: block;
+    }
+
+    .webhook-config label {
+      color: #9ca3af;
+      font-size: 12px;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .webhook-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .webhook-config input {
+      flex: 1;
+      background: #0f0d1f;
+      border: 1px solid #3d3a6e;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .webhook-config input:focus {
+      border-color: #6c3aed;
+    }
+
+    .webhook-config .save-btn {
+      background: #dc2626;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .webhook-config .save-btn:hover {
+      background: #b91c1c;
+    }
+
+    .webhook-config .hint {
+      color: #6b7280;
+      font-size: 11px;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
+    .webhook-config .hint code {
+      background: #2d2a5e;
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: #f97316;
+      font-size: 11px;
+    }
+
+    /* Quick actions */
+    .quick-actions {
+      padding: 14px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      border-bottom: 1px solid #2d2a5e;
+    }
+
+    .quick-btn {
+      background: #2d2a5e;
+      border: 1px solid #3d3a6e;
+      color: #e2e8f0;
+      padding: 7px 14px;
+      border-radius: 18px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-btn:hover {
+      background: #6c3aed;
+      border-color: #6c3aed;
+      color: #fff;
+    }
+
+    /* Messages */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: #3d3a6e;
+      border-radius: 3px;
+    }
+
+    .message {
+      max-width: 80%;
+      padding: 14px 18px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.bot {
+      background: #2d2a5e;
+      color: #e2e8f0;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message.user {
+      background: linear-gradient(135deg, #6c3aed, #7c3aed);
+      color: #fff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.system {
+      background: transparent;
+      color: #6b7280;
+      font-size: 12px;
+      align-self: center;
+      padding: 4px 12px;
+    }
+
+    .message.system .checkmark {
+      color: #4ade80;
+    }
+
+    /* Typing indicator */
+    .typing {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 14px 18px;
+      background: #2d2a5e;
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+      max-width: 80px;
+    }
+
+    .typing span {
+      width: 8px;
+      height: 8px;
+      background: #6b7280;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+
+    .typing span:nth-child(1) { animation-delay: 0s; }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    /* Input area */
+    .input-area {
+      padding: 16px 24px;
+      border-top: 1px solid #2d2a5e;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .input-area input {
+      flex: 1;
+      background: #0f0d1f;
+      border: 1px solid #3d3a6e;
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-area input:focus {
+      border-color: #6c3aed;
+    }
+
+    .input-area input::placeholder {
+      color: #6b7280;
+    }
+
+    .send-btn {
+      background: linear-gradient(135deg, #6c3aed, #7c3aed);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 22px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .send-btn:hover {
+      background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+      transform: scale(1.02);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      color: #4b5563;
+      font-size: 11px;
+      margin-top: 14px;
+    }
+
+    /* Dark mode toggle */
+    .dark-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <span class="logo">&lt;LAB365&gt;</span>
+    <span class="badge">IA para DEVs · SENAI</span>
+  </div>
+
+  <div class="chat-container">
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="avatar">🍔</div>
+        <div class="bot-info">
+          <h2>Zeca</h2>
+          <span class="status">online · assistente PedeAí</span>
+        </div>
+      </div>
+      <button class="settings-btn" onclick="toggleConfig()" title="Configurar Webhook">⚙️</button>
+    </div>
+
+    <!-- Webhook Config -->
+    <div class="webhook-config" id="webhookConfig">
+      <label>URL de Webhook n8n (Production URL do nó Webhook)</label>
+      <div class="webhook-input-row">
+        <input type="text" id="webhookUrl" placeholder="https://seu-n8n.app.n8n.cloud/webhook/chat" />
+        <button class="save-btn" onclick="saveWebhook()">Salvar</button>
+      </div>
+      <p class="hint">A URL fica salva só neste navegador (localStorage). Se der erro de CORS, ative <code>Allowed Origins (CORS) → *</code> no nó Webhook do n8n e republique o workflow.</p>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="quick-actions">
+      <button class="quick-btn" onclick="sendQuick('Tem pizza vegana?')">Tem pizza vegana?</button>
+      <button class="quick-btn" onclick="sendQuick('Qual o horário de funcionamento?')">Qual o horário de funcionamento?</button>
+      <button class="quick-btn" onclick="sendQuick('Quanto custa um X-Bacon?')">Quanto custa um X-Bacon?</button>
+      <button class="quick-btn" onclick="sendQuick('Vocês entregam no meu bairro?')">Vocês entregam no meu bairro?</button>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages" id="messages">
+      <div class="message bot">
+        Oi! Eu sou o Zeca 🍔, atendente virtual da PedeAí. Pergunte sobre o cardápio, horários ou entregas!
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-area">
+      <input type="text" id="messageInput" placeholder="Digite sua mensagem para o Zeca..." onkeydown="handleKey(event)" />
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">Enviar</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Demo educacional · LAB 365 / SENAI — este site não envia nem armazena pedidos reais.
+  </div>
+
+  <script>
+    // Load saved webhook URL
+    const webhookInput = document.getElementById('webhookUrl');
+    const messagesDiv = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Histórico de conversa para manter contexto
+    let conversationHistory = [];
+
+    const saved = localStorage.getItem('webhookUrl');
+    if (saved) {
+      webhookInput.value = saved;
+    }
+
+    function toggleConfig() {
+      const config = document.getElementById('webhookConfig');
+      config.classList.toggle('visible');
+    }
+
+    function saveWebhook() {
+      const url = webhookInput.value.trim();
+      if (url) {
+        localStorage.setItem('webhookUrl', url);
+        addSystemMessage('URL do webhook salva ✓');
+        document.getElementById('webhookConfig').classList.remove('visible');
+      }
+    }
+
+    function addMessage(text, type) {
+      const div = document.createElement('div');
+      div.className = `message ${type}`;
+      div.textContent = text;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function addSystemMessage(text) {
+      const div = document.createElement('div');
+      div.className = 'message system';
+      div.innerHTML = text;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function showTyping() {
+      const div = document.createElement('div');
+      div.className = 'typing';
+      div.id = 'typingIndicator';
+      div.innerHTML = '<span></span><span></span><span></span>';
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function hideTyping() {
+      const el = document.getElementById('typingIndicator');
+      if (el) el.remove();
+    }
+
+    function handleKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    function sendQuick(text) {
+      messageInput.value = text;
+      sendMessage();
+    }
+
+    async function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      const url = localStorage.getItem('webhookUrl');
+      if (!url) {
+        toggleConfig();
+        addSystemMessage('⚠️ Configure a URL do webhook primeiro');
+        return;
+      }
+
+      // Add user message
+      addMessage(text, 'user');
+      messageInput.value = '';
+      sendBtn.disabled = true;
+
+      // Show typing
+      showTyping();
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            mensagem: text,
+            historico: conversationHistory
+          })
+        });
+
+        hideTyping();
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const resposta = data.resposta || data.output || data.text || JSON.stringify(data);
+        addMessage(resposta, 'bot');
+
+        // Salvar no histórico
+        conversationHistory.push({ role: 'user', content: text });
+        conversationHistory.push({ role: 'assistant', content: resposta });
+
+        // Limitar histórico a últimas 20 mensagens para não estourar tokens
+        if (conversationHistory.length > 20) {
+          conversationHistory = conversationHistory.slice(-20);
+        }
+
+      } catch (error) {
+        hideTyping();
+        addMessage(`❌ Erro: ${error.message}. Verifique a URL do webhook e se o workflow está ativo.`, 'bot');
+      }
+
+      sendBtn.disabled = false;
+      messageInput.focus();
+    }
+  </script>
+</body>
+</html>

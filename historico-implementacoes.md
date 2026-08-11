@@ -1,0 +1,58 @@
+# Histórico de Implementações
+
+## v1.0 - Chatbot Básico (concluído)
+- Workflow n8n com 3 nós: Webhook → HTTP Request (Groq) → Respond
+- Chat HTML standalone (cliente_chat.html)
+- Modelo: llama-3.3-70b-versatile
+
+## v2.0 - Página da Lanchonete (concluído)
+- Página index.html com cardápio visual
+- Carrinho de compras com +/- quantidade
+- Checkout com dados do cliente (nome, telefone, endereço)
+- Chat flutuante integrado (Zeca)
+- Workflow de pedidos (workflow-pedidos.json)
+- Histórico de conversa no chat
+- Prompt de sistema melhorado (sem repetir saudação, conciso, com contexto)
+
+## v3.0 - Sistema Completo (em desenvolvimento)
+- Painel Admin com login para gerenciar produtos e pedidos
+- Persistência de dados via webhooks n8n
+- Cadastro de usuário (telefone + endereço)
+- Sistema de pagamento (PIX online / pagamento na entrega com troco)
+- Config de webhooks movida para o painel admin (não acessível ao cliente)
+- CRUD de produtos pelo admin
+- Gestão de pedidos (status: confirmado, preparando, saiu para entrega, entregue)
+
+## v3.1 - Persistência Remota com Supabase (concluído)
+- Banco PostgreSQL na nuvem via Supabase (plano gratuito)
+- Schema SQL com 4 tabelas: produtos, clientes, pedidos, pedido_itens
+- Workflow n8n para CRUD de produtos via Supabase REST API
+- Workflow n8n de pedidos salva cliente + pedido + itens no Supabase
+- Front busca produtos via webhook (fallback local se offline)
+- Admin gerencia produtos via Supabase (criar, editar, desativar)
+- URLs de webhook removidas do footer (só acessíveis via admin.html)
+- Campo "troco para" quando pagamento em dinheiro
+- Formas de pagamento configuráveis pelo admin
+- Documentação de setup do Supabase (database/SETUP-SUPABASE.md)
+
+## v3.2 - Imagens nos Produtos (concluído)
+- Campo emoji removido, substituído por imagem_url (VARCHAR 500)
+- Cards de produto exibem imagem real (foto do lanche)
+- Placeholder SVG quando não há imagem
+- Admin permite informar URL da imagem ao criar/editar produto
+- Schema e seed SQL atualizados
+- Workflows n8n atualizados para imagem_url
+
+## v3.3 - Redesign visual estilo iFood (concluído)
+- Layout branco, limpo e moderno
+- Paleta de cores: vermelho (#ea1d2c), amarelo (#ffba00), verde (#50a773)
+- Cards com sombra suave e hover elevado
+- Header sticky com fundo branco
+- Hero com gradiente vermelho
+- Botões com bordas arredondadas e peso visual
+- Chat flutuante com header vermelho
+- Formulários com inputs de borda fina
+- Toast de sucesso em verde
+- Admin panel com visual claro e clean
+- Responsivo para mobile
+- UX/UI seguindo padrões de apps de delivery

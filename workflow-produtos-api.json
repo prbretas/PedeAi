@@ -1,0 +1,153 @@
+{
+  "name": "PedeAí - API Produtos (Supabase)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "={{$request.method}}",
+        "path": "webhook/produtos",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-produtos",
+      "name": "Webhook Produtos",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "produtos-api"
+    },
+    {
+      "parameters": {
+        "jsCode": "const method = $input.first().json.headers['x-action'] || $input.first().json.body?.action || 'listar';\nconst body = $input.first().json.body || {};\n\nreturn [{ json: { action: method, ...body } }];"
+      },
+      "id": "router",
+      "name": "Identificar Ação",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/produtos?ativo=eq.true&order=categoria,nome",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-produtos",
+      "name": "Listar Produtos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/produtos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ nome: $json.nome, descricao: $json.descricao, preco: $json.preco, imagem_url: $json.imagem_url, categoria: $json.categoria }) }}",
+        "options": {}
+      },
+      "id": "create-produto",
+      "name": "Criar Produto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 400]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/produtos?id=eq.{{$json.id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ nome: $json.nome, descricao: $json.descricao, preco: $json.preco, imagem_url: $json.imagem_url, categoria: $json.categoria }) }}",
+        "options": {}
+      },
+      "id": "update-produto",
+      "name": "Atualizar Produto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 600]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/produtos?id=eq.{{$json.id}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"ativo\": false}",
+        "options": {}
+      },
+      "id": "delete-produto",
+      "name": "Desativar Produto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 800]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "respond-produtos",
+      "name": "Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [950, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Produtos": {
+      "main": [[ { "node": "Identificar Ação", "type": "main", "index": 0 } ]]
+    },
+    "Listar Produtos": {
+      "main": [[ { "node": "Responder", "type": "main", "index": 0 } ]]
+    },
+    "Criar Produto": {
+      "main": [[ { "node": "Responder", "type": "main", "index": 0 } ]]
+    },
+    "Atualizar Produto": {
+      "main": [[ { "node": "Responder", "type": "main", "index": 0 } ]]
+    },
+    "Desativar Produto": {
+      "main": [[ { "node": "Responder", "type": "main", "index": 0 } ]]
+    }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0
+}

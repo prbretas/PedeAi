@@ -1,0 +1,160 @@
+{
+  "name": "PedeAí - Receber Pedidos (Supabase)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook/pedido",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-pedido",
+      "name": "Webhook Pedido",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "pedido-lanchonete"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\n\n// 1. Preparar dados do cliente (upsert por telefone)\nconst cliente = {\n  nome: body.cliente.nome,\n  telefone: body.cliente.telefone,\n  endereco: body.cliente.endereco\n};\n\nreturn [{ json: { cliente, body } }];"
+      },
+      "id": "prepare-data",
+      "name": "Preparar Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/clientes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation,resolution=merge-duplicates" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.cliente) }}",
+        "options": {}
+      },
+      "id": "upsert-cliente",
+      "name": "Cadastrar/Atualizar Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const clienteResp = $input.first().json;\nconst body = $('Preparar Dados').first().json.body;\n\nconst clienteId = Array.isArray(clienteResp) ? clienteResp[0].id : clienteResp.id;\n\nconst pedido = {\n  cliente_id: clienteId,\n  status: 'confirmado',\n  entrega: body.entrega,\n  pagamento: body.pagamento,\n  troco_para: body.troco_para || null,\n  subtotal: body.subtotal,\n  taxa_entrega: body.taxa_entrega,\n  total: body.total,\n  endereco_entrega: body.cliente.endereco\n};\n\nreturn [{ json: { pedido, itens: body.itens } }];"
+      },
+      "id": "build-pedido",
+      "name": "Montar Pedido",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/pedidos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.pedido) }}",
+        "options": {}
+      },
+      "id": "insert-pedido",
+      "name": "Salvar Pedido",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const pedidoResp = $input.first().json;\nconst pedidoId = Array.isArray(pedidoResp) ? pedidoResp[0].id : pedidoResp.id;\nconst itens = $('Montar Pedido').first().json.itens;\n\nconst itensFormatados = itens.map(i => ({\n  pedido_id: pedidoId,\n  nome_produto: i.nome,\n  quantidade: i.quantidade,\n  preco_unitario: i.preco_unitario,\n  subtotal: i.subtotal\n}));\n\nreturn [{ json: { pedido_id: pedidoId, itens: itensFormatados } }];"
+      },
+      "id": "build-itens",
+      "name": "Montar Itens",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SUPABASE_URL}}/rest/v1/pedido_itens",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
+            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.itens) }}",
+        "options": {}
+      },
+      "id": "insert-itens",
+      "name": "Salvar Itens",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'confirmado', pedido_id: $json.pedido_id, mensagem: 'Pedido recebido com sucesso!' }) }}",
+        "options": {}
+      },
+      "id": "respond-pedido",
+      "name": "Confirmar Pedido",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1650, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Pedido": {
+      "main": [[ { "node": "Preparar Dados", "type": "main", "index": 0 } ]]
+    },
+    "Preparar Dados": {
+      "main": [[ { "node": "Cadastrar/Atualizar Cliente", "type": "main", "index": 0 } ]]
+    },
+    "Cadastrar/Atualizar Cliente": {
+      "main": [[ { "node": "Montar Pedido", "type": "main", "index": 0 } ]]
+    },
+    "Montar Pedido": {
+      "main": [[ { "node": "Salvar Pedido", "type": "main", "index": 0 } ]]
+    },
+    "Salvar Pedido": {
+      "main": [[ { "node": "Montar Itens", "type": "main", "index": 0 } ]]
+    },
+    "Montar Itens": {
+      "main": [[ { "node": "Salvar Itens", "type": "main", "index": 0 } ]]
+    },
+    "Salvar Itens": {
+      "main": [[ { "node": "Confirmar Pedido", "type": "main", "index": 0 } ]]
+    }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0
+}
