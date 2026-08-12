@@ -9,8 +9,6 @@ https://github.com/prbretas/PedeAi.git
 
 
 PENDENTE (próxima iteração):
-- Criar roles (Admin vs Gestor) com telas diferentes
-- Linkar pedido ao entregador
-- Editar entregador/categoria via modal popup
 - Specs, testes unitários, E2E
-- Proteger dados sensíveis
+- Proteger dados sensíveis (encriptar senhas, etc)
+- Gestão de usuários (criar/editar usuários e alterar senha)

@@ -110,3 +110,13 @@
 - Novo: nome dinâmico no h1 do admin ("Admin PedeAí - Hotdog da Joana")
 - Novo: status "pendente" com badge visual
 - Fix: cache de produtos é invalidado ao trocar categoria
+
+## v4.4 - Roles, Entregador-Pedido, Edição (concluído)
+
+- Sistema de roles: Admin (acesso total) vs Gestor (só pedidos, entregadores, gestão)
+- Login com 2 usuários padrão: admin/admin123 e gestor/gestor123
+- Gestor não vê: Empresa, Produtos, Categorias, Promoções, Config
+- Linkar pedido ao entregador via select no card do pedido
+- Resumo de entregadores agora mostra pedidos reais atribuídos (não mais distribuição igual)
+- Editar entregador (botão ✏️ ao lado do nome)
+- Pedido mostra nome do entregador atribuído
