@@ -355,26 +355,82 @@ function showOrderConfirmation(pedido) {
   const emp = getEmpresa();
   const modal = document.getElementById('confirmModal');
   const body = document.getElementById('confirmBody');
+  
+  let pixInfo = '';
+  if (pedido.pagamento === 'pix' && emp.chave_pix) {
+    pixInfo = `
+      <div style="background:#d1fae5;border-radius:10px;padding:14px;margin-bottom:16px;text-align:center;">
+        <p style="font-weight:700;color:#065f46;margin-bottom:6px;">💳 Pague via PIX:</p>
+        <p style="font-size:18px;font-weight:800;color:#065f46;word-break:break-all;">${emp.chave_pix}</p>
+        <p style="font-size:12px;color:#065f46;margin-top:6px;">Copie a chave e faça o pagamento de R$ ${pedido.total.toFixed(2)}</p>
+      </div>
+    `;
+  }
+
   body.innerHTML = `
     <div style="text-align:center;padding:20px;">
       <div style="font-size:48px;margin-bottom:12px;">✅</div>
       <h3 style="margin-bottom:8px;">Pedido Confirmado!</h3>
       <p style="color:var(--gray);margin-bottom:16px;">Pedido #${pedido.id}</p>
+      ${pixInfo}
       <div style="background:var(--bg);border-radius:12px;padding:16px;text-align:left;margin-bottom:16px;">
         <p><strong>Status:</strong> Em preparação 👨‍🍳</p>
         <p><strong>Tempo estimado:</strong> ${emp.tempo_entrega || '30-45 min'}</p>
         <p><strong>Total:</strong> R$ ${pedido.total.toFixed(2)}</p>
+        <p><strong>Pagamento:</strong> ${pedido.pagamento.toUpperCase()}</p>
         ${pedido.pagamento === 'dinheiro' && pedido.troco_para ? `<p><strong>Troco para:</strong> R$ ${pedido.troco_para.toFixed(2)}</p>` : ''}
       </div>
-      <p style="font-size:13px;color:var(--gray);">Você receberá atualizações pelo chat.</p>
+      <p style="font-size:13px;color:var(--gray);">Você receberá uma confirmação no WhatsApp.</p>
       <button class="btn-primary" onclick="closeConfirm()" style="margin-top:16px;">OK, Entendi!</button>
     </div>
   `;
   modal.classList.add('active');
+
+  // Enviar mensagem WhatsApp se configurado
+  sendWhatsAppConfirmation(pedido, emp);
 }
 
 function closeConfirm() {
   document.getElementById('confirmModal').classList.remove('active');
+}
+
+// ========================================
+// WHATSAPP CONFIRMATION
+// ========================================
+function sendWhatsAppConfirmation(pedido, emp) {
+  const telefoneCliente = pedido.cliente.telefone.replace(/\D/g, '');
+  if (!telefoneCliente || telefoneCliente.length < 10) return;
+
+  const dataFormatada = new Date(pedido.data).toLocaleString('pt-BR');
+  const itensTexto = pedido.itens.map(i => `  • ${i.quantidade}x ${i.nome} - R$ ${i.subtotal.toFixed(2)}`).join('\n');
+  
+  let pagamentoInfo = `Pagamento: ${pedido.pagamento.toUpperCase()}`;
+  if (pedido.pagamento === 'pix' && emp.chave_pix) {
+    pagamentoInfo += `\nChave PIX: ${emp.chave_pix}`;
+  }
+  if (pedido.pagamento === 'dinheiro' && pedido.troco_para) {
+    pagamentoInfo += `\nTroco para: R$ ${pedido.troco_para.toFixed(2)}`;
+  }
+
+  const mensagem = `✅ *Pedido Confirmado!*\n\n` +
+    `📋 *Pedido #${pedido.id}*\n` +
+    `📅 ${dataFormatada}\n\n` +
+    `*Itens:*\n${itensTexto}\n\n` +
+    `Subtotal: R$ ${pedido.subtotal.toFixed(2)}\n` +
+    `${pedido.desconto > 0 ? 'Desconto: -R$ ' + pedido.desconto.toFixed(2) + '\n' : ''}` +
+    `Taxa entrega: ${pedido.taxa_entrega === 0 ? 'Grátis' : 'R$ ' + pedido.taxa_entrega.toFixed(2)}\n` +
+    `*Total: R$ ${pedido.total.toFixed(2)}*\n\n` +
+    `${pagamentoInfo}\n` +
+    `${pedido.entrega === 'entrega' ? '🛵 Entrega em: ' + pedido.cliente.endereco : '🏪 Retirada na loja'}\n\n` +
+    `Tempo estimado: ${emp.tempo_entrega || '30-45 min'}\n\n` +
+    `_${emp.nome || 'PedeAí'} - Obrigado pelo pedido!_`;
+
+  const whatsUrl = `https://wa.me/55${telefoneCliente}?text=${encodeURIComponent(mensagem)}`;
+  
+  // Abre o WhatsApp em nova aba (o cliente vê a confirmação)
+  setTimeout(() => {
+    window.open(whatsUrl, '_blank');
+  }, 1500);
 }
 
 // ========================================
@@ -414,6 +470,11 @@ async function sendChat() {
 
   try {
     const emp = getEmpresa();
+    const produtos = await getProdutos();
+    const empresaConfig = {
+      ...emp,
+      produtos: produtos.map(p => `${p.nome}: R$ ${parseFloat(p.preco).toFixed(2)}`).join(', ')
+    };
     const res = await fetch(config.chatUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -421,6 +482,7 @@ async function sendChat() {
         mensagem: text,
         historico: chatHistory,
         empresa: emp.nome || 'PedeAí',
+        empresa_config: empresaConfig,
         carrinho: cart.map(i => `${i.qty}x ${i.nome}`).join(', ') || 'vazio'
       })
     });
