@@ -19,12 +19,32 @@ function getEmpresa() {
 function renderEmpresaInfo() {
   const emp = getEmpresa();
   const brandName = document.getElementById('brandName');
+  const brandLogo = document.getElementById('brandLogo');
+  const brandIcon = document.getElementById('brandIcon');
+  const heroSection = document.getElementById('heroSection');
+  const heroTitle = document.getElementById('heroTitle');
   const footerInfo = document.getElementById('footerInfo');
   const footerName = document.getElementById('footerName');
   const socialLinks = document.getElementById('socialLinks');
 
   if (brandName && emp.nome) brandName.textContent = emp.nome;
   if (footerName && emp.nome) footerName.textContent = emp.nome;
+  if (heroTitle && emp.nome) heroTitle.textContent = `Bem-vindo à ${emp.nome} 🍟`;
+
+  // Logo
+  if (brandLogo && emp.logo_url) {
+    brandLogo.src = emp.logo_url;
+    brandLogo.style.display = 'block';
+    if (brandIcon) brandIcon.style.display = 'none';
+  }
+
+  // Capa (background do hero)
+  if (heroSection && emp.imagem_url) {
+    heroSection.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url('${emp.imagem_url}')`;
+    heroSection.style.backgroundSize = 'cover';
+    heroSection.style.backgroundPosition = 'center';
+  }
+
   if (footerInfo) {
     footerInfo.textContent = `${emp.horario || ''} | 📍 ${emp.endereco || ''}`;
   }
@@ -434,7 +454,7 @@ function sendWhatsAppConfirmation(pedido, emp) {
 }
 
 // ========================================
-// CHAT (Zeca) + integração carrinho
+// CHAT (Perry) + integração carrinho
 // ========================================
 let chatHistory = [];
 

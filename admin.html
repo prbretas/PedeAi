@@ -45,6 +45,7 @@
       <button class="tab" onclick="switchTab('pedidos')">📦 Pedidos</button>
       <button class="tab" onclick="switchTab('promocoes')">🎉 Promoções</button>
       <button class="tab" onclick="switchTab('config')">⚙️ Config</button>
+      <button class="tab" onclick="switchTab('gestao')">💰 Gestão</button>
     </nav>
 
     <!-- Tab: Empresa -->
@@ -291,6 +292,45 @@
         <button class="btn-primary" onclick="saveAdminConfig()">Salvar Configurações</button>
       </div>
     </section>
+    <!-- Tab: Gestão -->
+    <section class="tab-content" id="tab-gestao">
+      <h3>Gestão Financeira e Entregadores</h3>
+
+      <h4>Resumo de Vendas</h4>
+      <div class="gestao-cards" id="gestaoResumo">
+        <div class="gestao-card"><span class="gestao-label">Total Vendas (hoje)</span><span class="gestao-value" id="vendasHoje">R$ 0,00</span></div>
+        <div class="gestao-card"><span class="gestao-label">Pedidos (hoje)</span><span class="gestao-value" id="pedidosHoje">0</span></div>
+        <div class="gestao-card"><span class="gestao-label">Ticket Médio</span><span class="gestao-value" id="ticketMedio">R$ 0,00</span></div>
+      </div>
+
+      <h4>Entregadores</h4>
+      <p class="hint-text">Cadastre entregadores e defina o valor por entrega.</p>
+      <div class="tab-header-row">
+        <div></div>
+        <button class="btn-primary" onclick="openEntregadorForm()">+ Novo Entregador</button>
+      </div>
+      <div id="entregadoresList"></div>
+      <div class="product-form" id="entregadorForm" style="display:none;">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome</label>
+            <input type="text" id="entNome" placeholder="Nome do entregador">
+          </div>
+          <div class="form-group">
+            <label>Valor por Entrega (R$)</label>
+            <input type="number" id="entValor" step="0.50" placeholder="5.00">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" onclick="saveEntregador()">Salvar</button>
+          <button class="btn-secondary" onclick="closeEntregadorForm()">Cancelar</button>
+        </div>
+      </div>
+
+      <h4>Pagamentos a Entregadores</h4>
+      <div id="entregadoresResumo"></div>
+    </section>
+
   </div>
 
   <script src="js/admin.js"></script>

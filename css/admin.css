@@ -284,3 +284,24 @@
 @keyframes fadeOut {
   to { opacity: 0; transform: translateY(-10px); }
 }
+
+/* Gestão cards */
+.gestao-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.gestao-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gestao-label { font-size: 12px; color: var(--gray); font-weight: 600; }
+.gestao-value { font-size: 22px; font-weight: 800; color: var(--dark); }

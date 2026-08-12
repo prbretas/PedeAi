@@ -32,6 +32,7 @@ function showAdmin() {
   loadPedidos();
   loadPromos();
   loadCategorias();
+  loadGestao();
 }
 
 // ========================================
@@ -459,6 +460,97 @@ function togglePromo(id) {
   if (p) p.ativo = !p.ativo;
   savePromos(promos);
   renderPromos(promos);
+}
+
+// ========================================
+// GESTÃO FINANCEIRA E ENTREGADORES
+// ========================================
+function loadGestao() {
+  const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+  const hoje = new Date().toDateString();
+  const pedidosHoje = pedidos.filter(p => new Date(p.data).toDateString() === hoje);
+  const totalHoje = pedidosHoje.reduce((sum, p) => sum + (p.total || 0), 0);
+  const ticket = pedidosHoje.length > 0 ? totalHoje / pedidosHoje.length : 0;
+
+  const elVendas = document.getElementById('vendasHoje');
+  const elPedidos = document.getElementById('pedidosHoje');
+  const elTicket = document.getElementById('ticketMedio');
+  if (elVendas) elVendas.textContent = `R$ ${totalHoje.toFixed(2)}`;
+  if (elPedidos) elPedidos.textContent = pedidosHoje.length;
+  if (elTicket) elTicket.textContent = `R$ ${ticket.toFixed(2)}`;
+
+  renderEntregadores();
+  renderEntregadoresResumo();
+}
+
+function getEntregadores() { return JSON.parse(localStorage.getItem('entregadores') || '[]'); }
+function saveEntregadores(list) { localStorage.setItem('entregadores', JSON.stringify(list)); }
+
+function renderEntregadores() {
+  const list = getEntregadores();
+  const container = document.getElementById('entregadoresList');
+  if (!container) return;
+  if (list.length === 0) { container.innerHTML = '<p class="hint-text">Nenhum entregador cadastrado.</p>'; return; }
+  container.innerHTML = list.map((e, i) => `
+    <div class="pedido-card" style="padding:12px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span><strong>${e.nome}</strong> — R$ ${parseFloat(e.valor_entrega).toFixed(2)}/entrega</span>
+        <button class="btn-delete" onclick="deleteEntregador(${i})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderEntregadoresResumo() {
+  const entregadores = getEntregadores();
+  const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+  const entregues = pedidos.filter(p => p.status === 'entregue');
+  const container = document.getElementById('entregadoresResumo');
+  if (!container) return;
+
+  if (entregadores.length === 0) {
+    container.innerHTML = '<p class="hint-text">Cadastre entregadores para ver o resumo.</p>';
+    return;
+  }
+
+  // Distribui entregas igualmente como exemplo
+  const perEntregador = entregadores.length > 0 ? Math.floor(entregues.length / entregadores.length) : 0;
+  container.innerHTML = entregadores.map(e => {
+    const totalAPagar = perEntregador * parseFloat(e.valor_entrega);
+    return `
+      <div class="pedido-card" style="padding:12px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span>🛵 <strong>${e.nome}</strong> — ${perEntregador} entregas</span>
+          <span style="color:var(--green);font-weight:700;">A pagar: R$ ${totalAPagar.toFixed(2)}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openEntregadorForm() { document.getElementById('entregadorForm').style.display = 'block'; document.getElementById('entNome').value = ''; document.getElementById('entValor').value = ''; }
+function closeEntregadorForm() { document.getElementById('entregadorForm').style.display = 'none'; }
+
+function saveEntregador() {
+  const nome = document.getElementById('entNome').value.trim();
+  const valor = parseFloat(document.getElementById('entValor').value) || 5;
+  if (!nome) return;
+  const list = getEntregadores();
+  list.push({ nome, valor_entrega: valor });
+  saveEntregadores(list);
+  renderEntregadores();
+  renderEntregadoresResumo();
+  closeEntregadorForm();
+  showAdminToast('Entregador cadastrado!');
+}
+
+function deleteEntregador(idx) {
+  if (!confirm('Remover entregador?')) return;
+  const list = getEntregadores();
+  list.splice(idx, 1);
+  saveEntregadores(list);
+  renderEntregadores();
+  renderEntregadoresResumo();
 }
 
 // ========================================

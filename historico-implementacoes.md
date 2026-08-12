@@ -87,3 +87,14 @@
 - Categorias dinâmicas no select de produto (vem do CRUD)
 - Assistente renomeado de "Zeca" para "Perry" em todos os arquivos
 - Prompt do chatbot no workflow atualizado para "Perry"
+
+## v4.2 - Logo/Capa visíveis, Gestão financeira, Entregadores (concluído)
+
+- Fix: Logo da empresa aparece no header (substitui emoji quando configurada)
+- Fix: Imagem de capa aparece como background do hero section
+- Chatbot já recebe dados dinâmicos (implementado no v4.1.1) — chave PIX, produtos, etc.
+- Nova aba "💰 Gestão" no admin com:
+  - Resumo de vendas do dia (total, qtd pedidos, ticket médio)
+  - CRUD de entregadores (nome + valor por entrega)
+  - Resumo de pagamentos a entregadores (baseado em entregas feitas)
+- Hero section usa imagem de capa dinâmica com overlay escuro para legibilidade

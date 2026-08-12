@@ -1,12 +1,12 @@
-# PedeAí - Sistema de Pedidos com Chatbot IA
+# PedeAI - Sistema de Pedidos com Chatbot IA
 
 Sistema completo de pedidos para lanchonetes e estabelecimentos, com página de produtos,
-carrinho de compras, checkout e chatbot inteligente (Zeca) via n8n + Groq.
+carrinho de compras, checkout e chatbot inteligente (Perry) via n8n + Groq.
 
 ## Estrutura do Projeto
 
 ```
-├── index.html                      ← Página principal do PedeAí
+├── index.html                      ← Página principal do PedeAI
 ├── css/style.css                   ← Estilos
 ├── js/app.js                       ← Lógica (carrinho, chat, pedidos)
 ├── cliente_chat.html               ← Chat standalone (versão simples)
@@ -56,7 +56,7 @@ Acesse: `http://localhost:8080`
 | Cardápio visual | Grid de produtos com preço e descrição |
 | Carrinho | Adicionar, remover, alterar quantidade |
 | Checkout | Dados do cliente, endereço, pagamento |
-| Chatbot Zeca | Chat flutuante com IA (Groq) |
+| Chatbot Perry | Chat flutuante com IA (Groq) |
 | Histórico | Chat mantém contexto da conversa |
 | Pedido via webhook | Envia pedido completo para n8n |
 | Config DEV | URLs configuráveis via painel oculto |

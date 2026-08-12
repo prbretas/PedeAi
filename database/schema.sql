@@ -1,5 +1,5 @@
 -- ================================================
--- SCHEMA DO BANCO - PedeAí
+-- SCHEMA DO BANCO - PedeAI
 -- Executar no SQL Editor do Supabase
 -- ================================================
 
@@ -28,7 +28,7 @@ CREATE TABLE empresa (
 );
 
 -- Inserir config padrão
-INSERT INTO empresa (nome) VALUES ('PedeAí');
+INSERT INTO empresa (nome) VALUES ('PedeAI');
 
 -- Tabela de Produtos
 CREATE TABLE produtos (

@@ -1,9 +1,9 @@
-# 🍔 PedeAí - Guia Completo de Instalação e Uso
+# 🍔 PedeAI - Guia Completo de Instalação e Uso
 
-## O que é o PedeAí?
+## O que é o PedeAI?
 
 Sistema de pedidos online para lanchonetes e pequenos estabelecimentos.
-Inclui: página de cardápio, carrinho, checkout, chatbot com IA (Zeca) e painel admin.
+Inclui: página de cardápio, carrinho, checkout, chatbot com IA (Perry) e painel admin.
 
 **Tecnologias usadas:**
 - Frontend: HTML + CSS + JavaScript puro (sem framework)
@@ -101,7 +101,7 @@ O site (HTML) é quem chama cada webhook conforme a ação do usuário.
 
 Cada workflow é um arquivo JSON independente. Importe um por vez:
 
-**Workflow 1 — Chatbot (Zeca com IA)**
+**Workflow 1 — Chatbot (Perry com IA)**
 1. No n8n, clique em **+ Add workflow** → **Import from File**
 2. Selecione: `workflow-chatbot-lanchonete.json`
 3. Abra o nó **"Chamar Groq LLM"**
@@ -176,7 +176,7 @@ Acesse: **http://localhost:8080**
 
 ### Chatbot
 1. No site, clique no botão 💬 (canto inferior direito)
-2. Digite "oi" — o Zeca deve responder
+2. Digite "oi" — o Perry deve responder
 
 ### Cardápio
 - Os produtos devem carregar do Supabase automaticamente
@@ -220,7 +220,7 @@ Acesse: **http://localhost:8080**
 ## Estrutura dos Arquivos
 
 ```
-PedeAí/
+PedeAI/
 ├── index.html                      ← Site do cliente (cardápio + carrinho)
 ├── admin.html                      ← Painel do admin (login: admin/admin123)
 ├── cliente_chat.html               ← Chat standalone (versão alternativa)
