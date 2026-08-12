@@ -31,6 +31,7 @@ function showAdmin() {
   loadProducts();
   loadPedidos();
   loadPromos();
+  loadCategorias();
 }
 
 // ========================================
@@ -156,33 +157,70 @@ function renderProductsTable(prods) {
   `).join('');
 }
 
-function openProductForm() {
-  document.getElementById('productForm').style.display = 'block';
-  document.getElementById('productFormTitle').textContent = 'Novo Produto';
+function loadCategorySelect() {
+  const cats = getCategorias();
+  const sel = document.getElementById('prodCategoria');
+  sel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function openProductModal() {
+  loadCategorySelect();
   document.getElementById('prodEditId').value = '';
   document.getElementById('prodImagem').value = '';
   document.getElementById('prodNome').value = '';
   document.getElementById('prodPreco').value = '';
   document.getElementById('prodDesc').value = '';
   document.getElementById('prodCategoria').value = 'lanche';
+  document.getElementById('prodImagemPreview').style.display = 'none';
+  document.getElementById('productModalTitle').textContent = 'Novo Produto';
+  document.getElementById('productModal').classList.add('active');
 }
 
-function closeProductForm() {
-  document.getElementById('productForm').style.display = 'none';
+function closeProductModal() {
+  const editId = document.getElementById('prodEditId').value;
+  if (editId && !confirm('Descartar alterações?')) return;
+  document.getElementById('productModal').classList.remove('active');
 }
 
 function editProduct(id) {
   const prods = getProductsFromStorage();
   const p = prods.find(x => x.id === id);
   if (!p) return;
-  document.getElementById('productForm').style.display = 'block';
-  document.getElementById('productFormTitle').textContent = 'Editar Produto';
+  loadCategorySelect();
+  document.getElementById('productModalTitle').textContent = 'Editar Produto';
   document.getElementById('prodEditId').value = p.id;
   document.getElementById('prodImagem').value = p.imagem_url || '';
   document.getElementById('prodNome').value = p.nome;
   document.getElementById('prodPreco').value = p.preco;
   document.getElementById('prodDesc').value = p.descricao || '';
   document.getElementById('prodCategoria').value = p.categoria || 'lanche';
+  const preview = document.getElementById('prodImagemPreview');
+  if (p.imagem_url) { preview.src = p.imagem_url; preview.style.display = 'block'; }
+  else { preview.style.display = 'none'; }
+  document.getElementById('productModal').classList.add('active');
+}
+
+function handleImageUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('prodImagem').value = e.target.result;
+    const preview = document.getElementById('prodImagemPreview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleEmpImageUpload(input, targetId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById(targetId).value = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 function saveProduct() {
@@ -196,6 +234,7 @@ function saveProduct() {
     descricao: document.getElementById('prodDesc').value,
     categoria: document.getElementById('prodCategoria').value
   };
+  if (!produto.nome || !produto.preco) { alert('Preencha nome e preço'); return; }
   if (editId) {
     const idx = prods.findIndex(p => p.id === parseInt(editId));
     if (idx > -1) prods[idx] = produto;
@@ -204,7 +243,7 @@ function saveProduct() {
   }
   saveProductsToStorage(prods);
   renderProductsTable(prods);
-  closeProductForm();
+  document.getElementById('productModal').classList.remove('active');
   showAdminToast(editId ? 'Produto atualizado!' : 'Produto criado!');
 }
 
@@ -215,6 +254,44 @@ function deleteProduct(id) {
   saveProductsToStorage(prods);
   renderProductsTable(prods);
   showAdminToast('Produto excluído');
+}
+
+// ========================================
+// CATEGORIAS CRUD
+// ========================================
+function getCategorias() {
+  const saved = localStorage.getItem('categorias');
+  if (saved) return JSON.parse(saved);
+  return ['lanche', 'acompanhamento', 'bebida', 'sobremesa'];
+}
+function saveCategorias(cats) { localStorage.setItem('categorias', JSON.stringify(cats)); }
+function loadCategorias() { renderCategorias(getCategorias()); }
+function renderCategorias(cats) {
+  const container = document.getElementById('categoriasList');
+  if (!container) return;
+  container.innerHTML = cats.map((c, i) => `
+    <div class="pedido-card" style="padding:12px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:700;text-transform:capitalize;">${c}</span>
+        <button class="btn-delete" onclick="deleteCat(${i})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+function openCatForm() { document.getElementById('catForm').style.display = 'block'; document.getElementById('catNome').value = ''; }
+function closeCatForm() { document.getElementById('catForm').style.display = 'none'; }
+function saveCat() {
+  const nome = document.getElementById('catNome').value.trim().toLowerCase();
+  if (!nome) return;
+  const cats = getCategorias();
+  if (!cats.includes(nome)) cats.push(nome);
+  saveCategorias(cats); renderCategorias(cats); closeCatForm();
+  showAdminToast('Categoria adicionada!');
+}
+function deleteCat(idx) {
+  if (!confirm('Excluir categoria?')) return;
+  const cats = getCategorias(); cats.splice(idx, 1);
+  saveCategorias(cats); renderCategorias(cats);
 }
 
 // ========================================

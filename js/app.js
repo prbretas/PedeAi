@@ -89,10 +89,19 @@ function renderPromos() {
 // CARRINHO
 // ========================================
 let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+let currentCategory = 'todos';
 
-async function renderProducts() {
+async function renderProducts(filterCat) {
   const grid = document.getElementById('productsGrid');
-  const PRODUTOS = await getProdutos();
+  let PRODUTOS = await getProdutos();
+  
+  // Render category filter
+  renderCategoryFilter(PRODUTOS);
+  
+  if (filterCat && filterCat !== 'todos') {
+    PRODUTOS = PRODUTOS.filter(p => p.categoria === filterCat);
+  }
+  
   grid.innerHTML = PRODUTOS.map(p => `
     <div class="product-card">
       <img class="product-img" src="${p.imagem_url || 'img/placeholder.svg'}" alt="${p.nome}" onerror="this.src='img/placeholder.svg'">
@@ -106,6 +115,19 @@ async function renderProducts() {
       </div>
     </div>
   `).join('');
+}
+
+function renderCategoryFilter(produtos) {
+  const container = document.getElementById('categoryFilter');
+  if (!container) return;
+  const cats = [...new Set(produtos.map(p => p.categoria))];
+  container.innerHTML = `<button class="cat-btn ${currentCategory === 'todos' ? 'active' : ''}" onclick="filterByCategory('todos')">Todos</button>` +
+    cats.map(c => `<button class="cat-btn ${currentCategory === c ? 'active' : ''}" onclick="filterByCategory('${c}')">${c.charAt(0).toUpperCase() + c.slice(1)}</button>`).join('');
+}
+
+function filterByCategory(cat) {
+  currentCategory = cat;
+  renderProducts(cat);
 }
 
 async function addToCart(productId) {

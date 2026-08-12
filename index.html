@@ -36,6 +36,7 @@
   <!-- Cardápio -->
   <section id="cardapio" class="section">
     <h2 class="section-title">Nosso Cardápio</h2>
+    <div class="category-filter" id="categoryFilter"></div>
     <div class="products-grid" id="productsGrid"></div>
   </section>
 
@@ -143,11 +144,11 @@
   <!-- Chat flutuante -->
   <div class="chat-float" id="chatFloat">
     <div class="chat-float-header">
-      <span>💬 Zeca - Atendente Virtual</span>
+      <span>💬 Perry - Atendente Virtual</span>
       <button onclick="closeChat()">&times;</button>
     </div>
     <div class="chat-float-messages" id="chatMessages">
-      <div class="msg bot">E aí! Sou o Zeca 🍔 O que posso ajudar?</div>
+      <div class="msg bot">E aí! Sou o Perry 🍔 O que posso ajudar?</div>
     </div>
     <div class="chat-float-input">
       <input type="text" id="chatInput" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendChat()">

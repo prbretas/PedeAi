@@ -75,3 +75,15 @@
 - Chatbot pode adicionar itens ao carrinho (via campo adicionar_carrinho na resposta)
 - Tabela empresa e promocoes no schema SQL
 - Redes sociais visíveis no footer para o cliente
+
+## v4.1 - Modal de produto, categorias, upload de imagem, Perry (concluído)
+
+- Edição de produto abre em modal/popup (não mais inline no final da tela)
+- Confirmação ao cancelar edição ("Descartar alterações?")
+- Upload de imagem nos produtos (campo URL + input file com preview)
+- Upload de imagem da empresa (logo e capa) — URL ou upload local
+- CRUD completo de categorias (criar, excluir) no admin
+- Filtro por categoria no site do cliente (botões tipo "Todos", "Lanche", "Bebida")
+- Categorias dinâmicas no select de produto (vem do CRUD)
+- Assistente renomeado de "Zeca" para "Perry" em todos os arquivos
+- Prompt do chatbot no workflow atualizado para "Perry"

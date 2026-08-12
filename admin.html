@@ -41,6 +41,7 @@
     <nav class="admin-tabs">
       <button class="tab active" onclick="switchTab('empresa')">🏪 Empresa</button>
       <button class="tab" onclick="switchTab('produtos')">📋 Produtos</button>
+      <button class="tab" onclick="switchTab('categorias')">🏷️ Categorias</button>
       <button class="tab" onclick="switchTab('pedidos')">📦 Pedidos</button>
       <button class="tab" onclick="switchTab('promocoes')">🎉 Promoções</button>
       <button class="tab" onclick="switchTab('config')">⚙️ Config</button>
@@ -67,12 +68,14 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>URL da Logo</label>
+            <label>Logo (URL ou upload)</label>
             <input type="text" id="empLogo" placeholder="img/logo.png ou URL">
+            <input type="file" id="empLogoFile" accept="image/*" onchange="handleEmpImageUpload(this, 'empLogo')" style="margin-top:6px;">
           </div>
           <div class="form-group">
-            <label>Imagem de Capa</label>
+            <label>Imagem de Capa (URL ou upload)</label>
             <input type="text" id="empImagem" placeholder="img/capa.jpg ou URL">
+            <input type="file" id="empImagemFile" accept="image/*" onchange="handleEmpImageUpload(this, 'empImagem')" style="margin-top:6px;">
           </div>
         </div>
         <div class="form-row">
@@ -130,7 +133,7 @@
     <section class="tab-content" id="tab-produtos">
       <div class="tab-header-row">
         <h3>Gerenciar Produtos</h3>
-        <button class="btn-primary" onclick="openProductForm()">+ Novo Produto</button>
+        <button class="btn-primary" onclick="openProductModal()">+ Novo Produto</button>
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table" id="productsTable">
@@ -146,44 +149,71 @@
           <tbody id="productsBody"></tbody>
         </table>
       </div>
-      <div class="product-form" id="productForm" style="display:none;">
-        <h4 id="productFormTitle">Novo Produto</h4>
-        <input type="hidden" id="prodEditId">
+    </section>
+
+    <!-- Tab: Categorias -->
+    <section class="tab-content" id="tab-categorias">
+      <div class="tab-header-row">
+        <h3>Gerenciar Categorias</h3>
+        <button class="btn-primary" onclick="openCatForm()">+ Nova Categoria</button>
+      </div>
+      <div id="categoriasList"></div>
+      <div class="product-form" id="catForm" style="display:none;">
         <div class="form-row">
           <div class="form-group">
-            <label>URL da Imagem</label>
-            <input type="text" id="prodImagem" placeholder="img/produto.jpg ou URL">
+            <label>Nome da Categoria</label>
+            <input type="text" id="catNome" placeholder="Ex: Combos">
           </div>
-          <div class="form-group">
-            <label>Nome</label>
-            <input type="text" id="prodNome" placeholder="X-Burguer" required>
+          <div class="form-group form-actions" style="align-self:end;">
+            <button class="btn-primary" onclick="saveCat()">Salvar</button>
+            <button class="btn-secondary" onclick="closeCatForm()">Cancelar</button>
           </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Preço (R$)</label>
-            <input type="number" id="prodPreco" step="0.50" min="0" required>
-          </div>
-          <div class="form-group">
-            <label>Categoria</label>
-            <select id="prodCategoria">
-              <option value="lanche">Lanche</option>
-              <option value="acompanhamento">Acompanhamento</option>
-              <option value="bebida">Bebida</option>
-              <option value="sobremesa">Sobremesa</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Descrição</label>
-          <input type="text" id="prodDesc" placeholder="Ingredientes...">
-        </div>
-        <div class="form-actions">
-          <button class="btn-primary" onclick="saveProduct()">Salvar</button>
-          <button class="btn-secondary" onclick="closeProductForm()">Cancelar</button>
         </div>
       </div>
     </section>
+
+    <!-- Modal Edição de Produto -->
+    <div class="modal-overlay" id="productModal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <h3 id="productModalTitle">Novo Produto</h3>
+          <button class="close-btn" onclick="closeProductModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="prodEditId">
+          <div class="form-group">
+            <label>Imagem do Produto</label>
+            <input type="text" id="prodImagem" placeholder="Cole a URL da imagem ou use upload abaixo">
+            <input type="file" id="prodImagemFile" accept="image/*" onchange="handleImageUpload(this)" style="margin-top:8px;">
+            <img id="prodImagemPreview" src="" style="display:none;max-width:200px;margin-top:8px;border-radius:8px;">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nome</label>
+              <input type="text" id="prodNome" placeholder="X-Burguer" required>
+            </div>
+            <div class="form-group">
+              <label>Preço (R$)</label>
+              <input type="number" id="prodPreco" step="0.50" min="0" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Categoria</label>
+              <select id="prodCategoria"></select>
+            </div>
+            <div class="form-group">
+              <label>Descrição</label>
+              <input type="text" id="prodDesc" placeholder="Ingredientes...">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" onclick="saveProduct()">Salvar Produto</button>
+            <button class="btn-secondary" onclick="closeProductModal()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Tab: Pedidos -->
     <section class="tab-content" id="tab-pedidos">
@@ -247,7 +277,7 @@
       <p class="hint-text">Cole aqui as Production URLs dos seus workflows n8n.</p>
       <div class="config-form">
         <div class="form-group">
-          <label>Webhook Chat (chatbot Zeca)</label>
+          <label>Webhook Chat (chatbot Perry)</label>
           <input type="text" id="adminCfgChat" placeholder="https://...webhook/chat">
         </div>
         <div class="form-group">
