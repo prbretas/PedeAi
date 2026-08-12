@@ -1,17 +1,29 @@
 // ========================================
-// LOGIN
+// LOGIN COM ROLES
 // ========================================
-const DEFAULT_USER = 'admin';
-const DEFAULT_PASS = 'admin123';
+// Usuários padrão: admin (tudo) e gestor (pedidos/entregadores/gestão)
+function getUsers() {
+  const saved = localStorage.getItem('app_users');
+  if (saved) return JSON.parse(saved);
+  return [
+    { user: 'admin', pass: 'admin123', role: 'admin' },
+    { user: 'gestor', pass: 'gestor123', role: 'gestor' }
+  ];
+}
+
+let currentRole = 'admin';
 
 function doLogin(e) {
   e.preventDefault();
-  const user = document.getElementById('loginUser').value;
+  const user = document.getElementById('loginUser').value.trim().toLowerCase();
   const pass = document.getElementById('loginPass').value;
-  const savedUser = localStorage.getItem('admin_user') || DEFAULT_USER;
-  const savedPass = localStorage.getItem('admin_pass') || DEFAULT_PASS;
-  if (user === savedUser && pass === savedPass) {
+  const users = getUsers();
+  const found = users.find(u => u.user === user && u.pass === pass);
+  if (found) {
+    currentRole = found.role;
     localStorage.setItem('admin_logged', 'true');
+    localStorage.setItem('admin_role', found.role);
+    localStorage.setItem('admin_username', found.user);
     showAdmin();
   } else {
     alert('Usuário ou senha incorretos');
@@ -20,12 +32,16 @@ function doLogin(e) {
 
 function doLogout() {
   localStorage.removeItem('admin_logged');
+  localStorage.removeItem('admin_role');
+  localStorage.removeItem('admin_username');
   location.reload();
 }
 
 function showAdmin() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('adminPanel').style.display = 'block';
+  currentRole = localStorage.getItem('admin_role') || 'admin';
+  applyRolePermissions();
   loadAdminConfig();
   loadEmpresa();
   loadProducts();
@@ -33,15 +49,32 @@ function showAdmin() {
   loadPromos();
   loadCategorias();
   loadGestao();
-  // Atualizar nome no h1 do admin
   updateAdminTitle();
+}
+
+function applyRolePermissions() {
+  // Gestor: esconde Empresa, Produtos, Categorias, Promoções, Config
+  const restrictedTabs = ['empresa', 'produtos', 'categorias', 'promocoes', 'config'];
+  const tabs = document.querySelectorAll('.admin-tabs .tab');
+  
+  if (currentRole === 'gestor') {
+    tabs.forEach(tab => {
+      const tabName = tab.textContent.toLowerCase();
+      const isRestricted = restrictedTabs.some(r => tabName.includes(r) || tabName.includes('empresa') || tabName.includes('produto') || tabName.includes('categor') || tabName.includes('promo') || tabName.includes('config'));
+      if (isRestricted) tab.style.display = 'none';
+    });
+    // Ativa a aba Pedidos por padrão para gestor
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-pedidos').classList.add('active');
+  }
 }
 
 function updateAdminTitle() {
   const emp = JSON.parse(localStorage.getItem('empresa_config') || '{}');
   const h1 = document.querySelector('.admin-brand h1');
-  if (h1 && emp.nome) {
-    h1.textContent = `Admin PedeAí - ${emp.nome}`;
+  const roleLabel = currentRole === 'admin' ? 'Admin' : 'Gestor';
+  if (h1) {
+    h1.textContent = `${roleLabel} PedeAí${emp.nome ? ' - ' + emp.nome : ''}`;
   }
 }
 
@@ -366,7 +399,12 @@ function renderPedidos(pedidos) {
             <option value="entrega" ${p.status==='entrega'?'selected':''}>🛵 Saiu p/ Entrega</option>
             <option value="entregue" ${p.status==='entregue'?'selected':''}>✔️ Entregue</option>
           </select>
+          <select onchange="assignEntregador(${p.id}, this.value)">
+            <option value="">🛵 Entregador</option>
+            ${getEntregadores().map(e => `<option value="${e.nome}" ${p.entregador === e.nome ? 'selected' : ''}>${e.nome}</option>`).join('')}
+          </select>
         </div>
+        ${p.entregador ? `<div style="font-size:11px;color:var(--gray);margin-top:4px;">🛵 ${p.entregador}</div>` : ''}
       </div>
     `;
   }).join('');
@@ -386,6 +424,17 @@ function updatePedidoStatus(pedidoId, newStatus) {
       const emp = JSON.parse(localStorage.getItem('empresa_config') || '{}');
       sendWhatsAppFromAdmin(pedido, emp);
     }
+  }
+}
+
+function assignEntregador(pedidoId, entregadorNome) {
+  const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
+  const pedido = pedidos.find(p => p.id === pedidoId);
+  if (pedido) {
+    pedido.entregador = entregadorNome;
+    localStorage.setItem('pedidos', JSON.stringify(pedidos));
+    showAdminToast(`Pedido #${pedidoId} → Entregador: ${entregadorNome || 'nenhum'}`);
+    loadPedidos();
   }
 }
 
@@ -552,7 +601,10 @@ function renderEntregadores() {
     <div class="pedido-card" style="padding:12px;margin-bottom:8px;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <span><strong>${e.nome}</strong> — R$ ${parseFloat(e.valor_entrega).toFixed(2)}/entrega</span>
-        <button class="btn-delete" onclick="deleteEntregador(${i})">🗑️</button>
+        <div>
+          <button class="btn-edit" onclick="editEntregador(${i})" title="Editar">✏️</button>
+          <button class="btn-delete" onclick="deleteEntregador(${i})">🗑️</button>
+        </div>
       </div>
     </div>
   `).join('');
@@ -561,7 +613,6 @@ function renderEntregadores() {
 function renderEntregadoresResumo() {
   const entregadores = getEntregadores();
   const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
-  const entregues = pedidos.filter(p => p.status === 'entregue');
   const container = document.getElementById('entregadoresResumo');
   if (!container) return;
 
@@ -570,35 +621,51 @@ function renderEntregadoresResumo() {
     return;
   }
 
-  // Distribui entregas igualmente como exemplo
-  const perEntregador = entregadores.length > 0 ? Math.floor(entregues.length / entregadores.length) : 0;
   container.innerHTML = entregadores.map(e => {
-    const totalAPagar = perEntregador * parseFloat(e.valor_entrega);
+    const entregas = pedidos.filter(p => p.entregador === e.nome && (p.status === 'entrega' || p.status === 'entregue'));
+    const totalAPagar = entregas.length * parseFloat(e.valor_entrega);
+    const pedidoIds = entregas.map(p => '#' + p.id).join(', ');
     return `
       <div class="pedido-card" style="padding:12px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span>🛵 <strong>${e.nome}</strong> — ${perEntregador} entregas</span>
+          <span>🛵 <strong>${e.nome}</strong> — ${entregas.length} entregas</span>
           <span style="color:var(--green);font-weight:700;">A pagar: R$ ${totalAPagar.toFixed(2)}</span>
         </div>
+        ${pedidoIds ? `<div style="font-size:11px;color:var(--gray);margin-top:4px;">Pedidos: ${pedidoIds}</div>` : ''}
       </div>
     `;
   }).join('');
 }
 
-function openEntregadorForm() { document.getElementById('entregadorForm').style.display = 'block'; document.getElementById('entNome').value = ''; document.getElementById('entValor').value = ''; }
+function openEntregadorForm() { document.getElementById('entregadorForm').style.display = 'block'; document.getElementById('entNome').value = ''; document.getElementById('entValor').value = ''; document.getElementById('entNome').dataset.editIdx = ''; }
 function closeEntregadorForm() { document.getElementById('entregadorForm').style.display = 'none'; }
+
+function editEntregador(idx) {
+  const list = getEntregadores();
+  const e = list[idx];
+  if (!e) return;
+  document.getElementById('entregadorForm').style.display = 'block';
+  document.getElementById('entNome').value = e.nome;
+  document.getElementById('entValor').value = e.valor_entrega;
+  document.getElementById('entNome').dataset.editIdx = idx;
+}
 
 function saveEntregador() {
   const nome = document.getElementById('entNome').value.trim();
   const valor = parseFloat(document.getElementById('entValor').value) || 5;
   if (!nome) return;
   const list = getEntregadores();
-  list.push({ nome, valor_entrega: valor });
+  const editIdx = document.getElementById('entNome').dataset.editIdx;
+  if (editIdx !== '' && editIdx !== undefined) {
+    list[parseInt(editIdx)] = { nome, valor_entrega: valor };
+  } else {
+    list.push({ nome, valor_entrega: valor });
+  }
   saveEntregadores(list);
   renderEntregadores();
   renderEntregadoresResumo();
   closeEntregadorForm();
-  showAdminToast('Entregador cadastrado!');
+  showAdminToast(editIdx ? 'Entregador atualizado!' : 'Entregador cadastrado!');
 }
 
 function deleteEntregador(idx) {
