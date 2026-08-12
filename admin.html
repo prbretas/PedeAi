@@ -39,32 +39,90 @@
 
     <!-- Tabs -->
     <nav class="admin-tabs">
-      <button class="tab active" onclick="switchTab('config')">⚙️ Config</button>
+      <button class="tab active" onclick="switchTab('empresa')">🏪 Empresa</button>
       <button class="tab" onclick="switchTab('produtos')">📋 Produtos</button>
       <button class="tab" onclick="switchTab('pedidos')">📦 Pedidos</button>
-      <button class="tab" onclick="switchTab('pagamentos')">💳 Pagamentos</button>
+      <button class="tab" onclick="switchTab('promocoes')">🎉 Promoções</button>
+      <button class="tab" onclick="switchTab('config')">⚙️ Config</button>
     </nav>
 
-    <!-- Tab: Config Webhooks -->
-    <section class="tab-content active" id="tab-config">
-      <h3>Configuração de Webhooks</h3>
-      <p class="hint-text">Cole aqui as Production URLs dos seus workflows n8n.</p>
+    <!-- Tab: Empresa -->
+    <section class="tab-content active" id="tab-empresa">
+      <h3>Configurações do Estabelecimento</h3>
+      <p class="hint-text">Edite as informações que aparecem para o cliente no site.</p>
       <div class="config-form">
-        <div class="form-group">
-          <label>Webhook Chat (chatbot Zeca)</label>
-          <input type="text" id="adminCfgChat" placeholder="https://...webhook/chat">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome do Estabelecimento</label>
+            <input type="text" id="empNome" placeholder="Hot Dog da Joana">
+          </div>
+          <div class="form-group">
+            <label>Telefone / WhatsApp</label>
+            <input type="text" id="empTelefone" placeholder="(11) 99999-9999">
+          </div>
         </div>
         <div class="form-group">
-          <label>Webhook Pedido (receber pedidos)</label>
-          <input type="text" id="adminCfgOrder" placeholder="https://...webhook/pedido">
+          <label>Endereço</label>
+          <input type="text" id="empEndereco" placeholder="Rua Exemplo, 123 - Centro">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>URL da Logo</label>
+            <input type="text" id="empLogo" placeholder="img/logo.png ou URL">
+          </div>
+          <div class="form-group">
+            <label>Imagem de Capa</label>
+            <input type="text" id="empImagem" placeholder="img/capa.jpg ou URL">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Horário de Funcionamento</label>
+            <input type="text" id="empHorario" placeholder="Seg-Sáb 11h-23h | Dom 16h-22h">
+          </div>
+          <div class="form-group">
+            <label>Tempo de Entrega</label>
+            <input type="text" id="empTempoEntrega" placeholder="30-45 min">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Taxa de Entrega (R$)</label>
+            <input type="number" id="empTaxaEntrega" step="0.50" placeholder="5.00">
+          </div>
+          <div class="form-group">
+            <label>Grátis acima de (R$)</label>
+            <input type="number" id="empGratisAcima" step="5" placeholder="50">
+          </div>
+        </div>
+        <h4>Redes Sociais</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Instagram</label>
+            <input type="text" id="empInstagram" placeholder="https://instagram.com/...">
+          </div>
+          <div class="form-group">
+            <label>Facebook</label>
+            <input type="text" id="empFacebook" placeholder="https://facebook.com/...">
+          </div>
         </div>
         <div class="form-group">
-          <label>Webhook Produtos (CRUD produtos)</label>
-          <input type="text" id="adminCfgProducts" placeholder="https://...webhook/produtos">
+          <label>Link do WhatsApp</label>
+          <input type="text" id="empWhatsapp" placeholder="https://wa.me/5511999999999">
         </div>
-        <button class="btn-primary" onclick="saveAdminConfig()">
-          Salvar Configurações
-        </button>
+        <h4>Pagamentos</h4>
+        <div class="payment-options">
+          <label class="payment-toggle"><input type="checkbox" id="empPix" checked><span>PIX (online)</span></label>
+          <label class="payment-toggle"><input type="checkbox" id="empCredito" checked><span>Cartão Crédito</span></label>
+          <label class="payment-toggle"><input type="checkbox" id="empDebito" checked><span>Cartão Débito</span></label>
+          <label class="payment-toggle"><input type="checkbox" id="empDinheiro" checked><span>Dinheiro</span></label>
+        </div>
+        <div class="form-group" style="margin-top:12px;">
+          <label>Chave PIX</label>
+          <input type="text" id="empChavePix" placeholder="email@exemplo.com ou CPF">
+        </div>
+        <button class="btn-primary" onclick="saveEmpresa()" style="margin-top:16px;">Salvar Empresa</button>
       </div>
     </section>
 
@@ -81,22 +139,20 @@
               <th>Imagem</th>
               <th>Nome</th>
               <th>Preço</th>
-              <th>Descrição</th>
+              <th>Categoria</th>
               <th>Ações</th>
             </tr>
           </thead>
           <tbody id="productsBody"></tbody>
         </table>
       </div>
-
-      <!-- Form produto -->
       <div class="product-form" id="productForm" style="display:none;">
         <h4 id="productFormTitle">Novo Produto</h4>
         <input type="hidden" id="prodEditId">
         <div class="form-row">
           <div class="form-group">
             <label>URL da Imagem</label>
-            <input type="text" id="prodImagem" placeholder="img/nome-produto.jpg ou URL externa">
+            <input type="text" id="prodImagem" placeholder="img/produto.jpg ou URL">
           </div>
           <div class="form-group">
             <label>Nome</label>
@@ -142,33 +198,68 @@
       <div id="pedidosList" class="pedidos-list"></div>
     </section>
 
-    <!-- Tab: Pagamentos -->
-    <section class="tab-content" id="tab-pagamentos">
-      <h3>Formas de Pagamento</h3>
-      <p class="hint-text">Configure quais formas de pagamento estarão disponíveis.</p>
-      <div class="payment-options">
-        <label class="payment-toggle">
-          <input type="checkbox" id="payPix" checked onchange="savePaymentConfig()">
-          <span>PIX (online)</span>
-        </label>
-        <label class="payment-toggle">
-          <input type="checkbox" id="payCredito" checked onchange="savePaymentConfig()">
-          <span>Cartão Crédito (na entrega)</span>
-        </label>
-        <label class="payment-toggle">
-          <input type="checkbox" id="payDebito" checked onchange="savePaymentConfig()">
-          <span>Cartão Débito (na entrega)</span>
-        </label>
-        <label class="payment-toggle">
-          <input type="checkbox" id="payDinheiro" checked onchange="savePaymentConfig()">
-          <span>Dinheiro (na entrega)</span>
-        </label>
+    <!-- Tab: Promoções -->
+    <section class="tab-content" id="tab-promocoes">
+      <div class="tab-header-row">
+        <h3>Promoções e Cupons</h3>
+        <button class="btn-primary" onclick="openPromoForm()">+ Nova Promoção</button>
       </div>
-      <div class="form-group" style="margin-top:20px;">
-        <label>Chave PIX (para pagamento online)</label>
-        <input type="text" id="pixKey" placeholder="email@exemplo.com ou CPF ou telefone">
+      <div id="promosList"></div>
+      <div class="product-form" id="promoForm" style="display:none;">
+        <h4 id="promoFormTitle">Nova Promoção</h4>
+        <input type="hidden" id="promoEditId">
+        <div class="form-group">
+          <label>Título</label>
+          <input type="text" id="promoTitulo" placeholder="Ex: 10% OFF no primeiro pedido">
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <input type="text" id="promoDesc" placeholder="Válido até...">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="promoTipo">
+              <option value="percentual">% Desconto</option>
+              <option value="fixo">R$ Fixo</option>
+              <option value="frete_gratis">Frete Grátis</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Valor (% ou R$)</label>
+            <input type="number" id="promoValor" step="1" min="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Código do Cupom (opcional)</label>
+          <input type="text" id="promoCodigo" placeholder="PROMO10" style="text-transform:uppercase;">
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" onclick="savePromo()">Salvar</button>
+          <button class="btn-secondary" onclick="closePromoForm()">Cancelar</button>
+        </div>
       </div>
-      <button class="btn-primary" onclick="savePaymentConfig()">Salvar</button>
+    </section>
+
+    <!-- Tab: Config Webhooks -->
+    <section class="tab-content" id="tab-config">
+      <h3>Configuração de Webhooks (n8n)</h3>
+      <p class="hint-text">Cole aqui as Production URLs dos seus workflows n8n.</p>
+      <div class="config-form">
+        <div class="form-group">
+          <label>Webhook Chat (chatbot Zeca)</label>
+          <input type="text" id="adminCfgChat" placeholder="https://...webhook/chat">
+        </div>
+        <div class="form-group">
+          <label>Webhook Pedido (receber pedidos)</label>
+          <input type="text" id="adminCfgOrder" placeholder="https://...webhook/pedido">
+        </div>
+        <div class="form-group">
+          <label>Webhook Produtos (CRUD produtos)</label>
+          <input type="text" id="adminCfgProducts" placeholder="https://...webhook/produtos">
+        </div>
+        <button class="btn-primary" onclick="saveAdminConfig()">Salvar Configurações</button>
+      </div>
     </section>
   </div>
 

@@ -539,3 +539,38 @@ h4 { margin: 18px 0 10px; font-size: 14px; font-weight: 800; color: var(--dark);
   .products-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
   .product-img { height: 120px; }
 }
+
+/* Promo Banner */
+.promo-banner {
+  background: var(--yellow-light);
+  padding: 10px 24px;
+  text-align: center;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #eee;
+}
+
+.promo-badge {
+  font-size: 13px;
+  color: #856404;
+  font-weight: 600;
+}
+
+/* Social Links */
+.social-links {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.social-links a {
+  color: var(--red);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.social-links a:hover { text-decoration: underline; }

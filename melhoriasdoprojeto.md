@@ -4,7 +4,5 @@ SALVAR O QUE JA FOI SOLICITADO E DESENVOLVIDO EM UM ARQUIVO PARA QUE POSSA ANALI
 
 (Todos os itens anteriores foram implementados e movidos para historico-implementacoes.md)
 
-
 link do repositorio do github:
 https://github.com/prbretas/PedeAi.git
-

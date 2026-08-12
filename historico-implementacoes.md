@@ -56,3 +56,22 @@
 - Admin panel com visual claro e clean
 - Responsivo para mobile
 - UX/UI seguindo padrões de apps de delivery
+
+## v4.0 - Sistema Completo com Admin Empresa (concluído)
+
+### Bugs corrigidos:
+- Fix: edição de produtos no admin (usava async desnecessário, simplificado para localStorage direto)
+- Fix: config de pagamento do admin agora sincroniza com o site (empresa_config → payment_config)
+- Fix: chatbot agora recebe dados da empresa dinamicamente
+
+### Novas features:
+- Painel Admin → aba "Empresa": editar nome, logo, telefone, endereço, horário, tempo entrega, taxa, redes sociais, formas de pagamento, chave PIX
+- Site carrega dados da empresa dinamicamente (header, footer, redes sociais)
+- Confirmação visual de pedido (modal com status, tempo estimado, número do pedido)
+- Sistema de promoções/cupons: criar, editar, ativar/desativar promoções
+- Cupom de desconto no checkout (percentual, valor fixo, frete grátis)
+- Banner de promoções ativas no topo do site
+- Chatbot envia dados da empresa e carrinho atual para contexto
+- Chatbot pode adicionar itens ao carrinho (via campo adicionar_carrinho na resposta)
+- Tabela empresa e promocoes no schema SQL
+- Redes sociais visíveis no footer para o cliente

@@ -1,5 +1,5 @@
 // ========================================
-// ADMIN - Login simples (credenciais em localStorage)
+// LOGIN
 // ========================================
 const DEFAULT_USER = 'admin';
 const DEFAULT_PASS = 'admin123';
@@ -8,10 +8,8 @@ function doLogin(e) {
   e.preventDefault();
   const user = document.getElementById('loginUser').value;
   const pass = document.getElementById('loginPass').value;
-
   const savedUser = localStorage.getItem('admin_user') || DEFAULT_USER;
   const savedPass = localStorage.getItem('admin_pass') || DEFAULT_PASS;
-
   if (user === savedUser && pass === savedPass) {
     localStorage.setItem('admin_logged', 'true');
     showAdmin();
@@ -29,9 +27,10 @@ function showAdmin() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('adminPanel').style.display = 'block';
   loadAdminConfig();
+  loadEmpresa();
   loadProducts();
   loadPedidos();
-  loadPaymentConfig();
+  loadPromos();
 }
 
 // ========================================
@@ -40,9 +39,62 @@ function showAdmin() {
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  
   event.target.classList.add('active');
   document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+// ========================================
+// EMPRESA CONFIG
+// ========================================
+function loadEmpresa() {
+  const emp = JSON.parse(localStorage.getItem('empresa_config') || '{}');
+  document.getElementById('empNome').value = emp.nome || '';
+  document.getElementById('empTelefone').value = emp.telefone || '';
+  document.getElementById('empEndereco').value = emp.endereco || '';
+  document.getElementById('empLogo').value = emp.logo_url || '';
+  document.getElementById('empImagem').value = emp.imagem_url || '';
+  document.getElementById('empHorario').value = emp.horario || 'Seg-Sáb 11h-23h | Dom 16h-22h';
+  document.getElementById('empTempoEntrega').value = emp.tempo_entrega || '30-45 min';
+  document.getElementById('empTaxaEntrega').value = emp.taxa_entrega || 5;
+  document.getElementById('empGratisAcima').value = emp.entrega_gratis_acima || 50;
+  document.getElementById('empInstagram').value = emp.link_instagram || '';
+  document.getElementById('empFacebook').value = emp.link_facebook || '';
+  document.getElementById('empWhatsapp').value = emp.link_whatsapp || '';
+  document.getElementById('empPix').checked = emp.aceita_pix !== false;
+  document.getElementById('empCredito').checked = emp.aceita_credito !== false;
+  document.getElementById('empDebito').checked = emp.aceita_debito !== false;
+  document.getElementById('empDinheiro').checked = emp.aceita_dinheiro !== false;
+  document.getElementById('empChavePix').value = emp.chave_pix || '';
+}
+
+function saveEmpresa() {
+  const emp = {
+    nome: document.getElementById('empNome').value,
+    telefone: document.getElementById('empTelefone').value,
+    endereco: document.getElementById('empEndereco').value,
+    logo_url: document.getElementById('empLogo').value,
+    imagem_url: document.getElementById('empImagem').value,
+    horario: document.getElementById('empHorario').value,
+    tempo_entrega: document.getElementById('empTempoEntrega').value,
+    taxa_entrega: parseFloat(document.getElementById('empTaxaEntrega').value) || 5,
+    entrega_gratis_acima: parseFloat(document.getElementById('empGratisAcima').value) || 50,
+    link_instagram: document.getElementById('empInstagram').value,
+    link_facebook: document.getElementById('empFacebook').value,
+    link_whatsapp: document.getElementById('empWhatsapp').value,
+    aceita_pix: document.getElementById('empPix').checked,
+    aceita_credito: document.getElementById('empCredito').checked,
+    aceita_debito: document.getElementById('empDebito').checked,
+    aceita_dinheiro: document.getElementById('empDinheiro').checked,
+    chave_pix: document.getElementById('empChavePix').value
+  };
+  localStorage.setItem('empresa_config', JSON.stringify(emp));
+  // Sync payment config for the site
+  localStorage.setItem('payment_config', JSON.stringify({
+    pix: emp.aceita_pix, credito: emp.aceita_credito,
+    debito: emp.aceita_debito, dinheiro: emp.aceita_dinheiro,
+    pixKey: emp.chave_pix
+  }));
+  showAdminToast('Empresa salva! O site será atualizado.');
 }
 
 // ========================================
@@ -62,55 +114,29 @@ function saveAdminConfig() {
 }
 
 // ========================================
-// PRODUTOS CRUD (via Supabase webhook)
+// PRODUTOS CRUD
 // ========================================
-function getProductsUrl() {
-  return localStorage.getItem('cfg_products') || '';
-}
-
-async function getProducts() {
-  const url = getProductsUrl();
-  if (url) {
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'listar' })
-      });
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) return data;
-    } catch (err) {
-      console.log('Erro ao buscar produtos remotos:', err);
-    }
-  }
-  // Fallback localStorage
+function getProductsFromStorage() {
   return JSON.parse(localStorage.getItem('produtos') || '[]');
 }
 
-function saveProducts(prods) {
+function saveProductsToStorage(prods) {
   localStorage.setItem('produtos', JSON.stringify(prods));
 }
 
-async function loadProducts() {
-  let prods = await getProducts();
-  
-  // Se não há produtos, carregar padrão
+function loadProducts() {
+  let prods = getProductsFromStorage();
   if (prods.length === 0) {
     prods = [
-      { id: 1, nome: 'X-Burguer', preco: 18.00, imagem_url: 'img/x-burguer.jpg', descricao: 'Pão, hambúrguer, queijo, alface e tomate', categoria: 'lanche' },
-      { id: 2, nome: 'X-Salada', preco: 20.00, imagem_url: 'img/x-salada.jpg', descricao: 'Pão, hambúrguer, queijo, alface, tomate e maionese', categoria: 'lanche' },
-      { id: 3, nome: 'X-Bacon', preco: 22.00, imagem_url: 'img/x-bacon.jpg', descricao: 'Pão, hambúrguer, queijo, bacon crocante', categoria: 'lanche' },
-      { id: 4, nome: 'X-Tudo', preco: 28.00, imagem_url: 'img/x-tudo.jpg', descricao: 'Pão, 2 hambúrgueres, queijo, bacon, ovo', categoria: 'lanche' },
+      { id: 1, nome: 'X-Burguer', preco: 18.00, imagem_url: 'img/x-burguer.jpg', descricao: 'Pão, hambúrguer, queijo', categoria: 'lanche' },
+      { id: 2, nome: 'X-Salada', preco: 20.00, imagem_url: 'img/x-salada.jpg', descricao: 'Pão, hambúrguer, queijo, alface', categoria: 'lanche' },
+      { id: 3, nome: 'X-Bacon', preco: 22.00, imagem_url: 'img/x-bacon.jpg', descricao: 'Pão, hambúrguer, queijo, bacon', categoria: 'lanche' },
+      { id: 4, nome: 'X-Tudo', preco: 28.00, imagem_url: 'img/x-tudo.jpg', descricao: 'Pão, 2 hambúrgueres, tudo', categoria: 'lanche' },
       { id: 5, nome: 'Batata Frita', preco: 15.00, imagem_url: 'img/batata-frita.jpg', descricao: 'Porção generosa', categoria: 'acompanhamento' },
-      { id: 6, nome: 'Onion Rings', preco: 17.00, imagem_url: 'img/onion-rings.jpg', descricao: 'Anéis de cebola empanados', categoria: 'acompanhamento' },
-      { id: 7, nome: 'Refrigerante Lata', preco: 7.00, imagem_url: 'img/refrigerante.jpg', descricao: 'Coca, Guaraná ou Sprite', categoria: 'bebida' },
-      { id: 8, nome: 'Suco Natural', preco: 10.00, imagem_url: 'img/suco-natural.jpg', descricao: 'Laranja, limão ou maracujá', categoria: 'bebida' },
-      { id: 9, nome: 'Água', preco: 4.00, imagem_url: 'img/agua.jpg', descricao: 'Água mineral 500ml', categoria: 'bebida' },
-      { id: 10, nome: 'Milk Shake', preco: 16.00, imagem_url: 'img/milk-shake.jpg', descricao: 'Chocolate, morango ou baunilha', categoria: 'bebida' }
+      { id: 6, nome: 'Refrigerante', preco: 7.00, imagem_url: 'img/refrigerante.jpg', descricao: 'Coca, Guaraná, Sprite', categoria: 'bebida' },
     ];
-    saveProducts(prods);
+    saveProductsToStorage(prods);
   }
-
   renderProductsTable(prods);
 }
 
@@ -121,7 +147,7 @@ function renderProductsTable(prods) {
       <td><img src="${p.imagem_url || 'img/placeholder.svg'}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;" onerror="this.src='img/placeholder.svg'"></td>
       <td>${p.nome}</td>
       <td>R$ ${parseFloat(p.preco).toFixed(2)}</td>
-      <td>${p.descricao || p.desc || ''}</td>
+      <td>${p.categoria || '-'}</td>
       <td>
         <button class="btn-edit" onclick="editProduct(${p.id})" title="Editar">✏️</button>
         <button class="btn-delete" onclick="deleteProduct(${p.id})" title="Excluir">🗑️</button>
@@ -145,81 +171,48 @@ function closeProductForm() {
   document.getElementById('productForm').style.display = 'none';
 }
 
-async function editProduct(id) {
-  const prods = await getProducts();
+function editProduct(id) {
+  const prods = getProductsFromStorage();
   const p = prods.find(x => x.id === id);
   if (!p) return;
-
   document.getElementById('productForm').style.display = 'block';
   document.getElementById('productFormTitle').textContent = 'Editar Produto';
   document.getElementById('prodEditId').value = p.id;
   document.getElementById('prodImagem').value = p.imagem_url || '';
   document.getElementById('prodNome').value = p.nome;
   document.getElementById('prodPreco').value = p.preco;
-  document.getElementById('prodDesc').value = p.descricao || p.desc || '';
+  document.getElementById('prodDesc').value = p.descricao || '';
   document.getElementById('prodCategoria').value = p.categoria || 'lanche';
 }
 
-async function saveProduct() {
+function saveProduct() {
+  const prods = getProductsFromStorage();
   const editId = document.getElementById('prodEditId').value;
-  const url = getProductsUrl();
-
   const produto = {
-    id: editId ? parseInt(editId) : undefined,
+    id: editId ? parseInt(editId) : Date.now(),
     imagem_url: document.getElementById('prodImagem').value || 'img/placeholder.svg',
     nome: document.getElementById('prodNome').value,
     preco: parseFloat(document.getElementById('prodPreco').value),
     descricao: document.getElementById('prodDesc').value,
     categoria: document.getElementById('prodCategoria').value
   };
-
-  if (url) {
-    try {
-      const action = editId ? 'atualizar' : 'criar';
-      await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, ...produto })
-      });
-    } catch (err) {
-      console.log('Erro ao salvar produto remoto:', err);
-    }
-  }
-
-  // Também salva local como cache
-  const prods = await getProducts();
   if (editId) {
     const idx = prods.findIndex(p => p.id === parseInt(editId));
-    if (idx > -1) prods[idx] = { ...prods[idx], ...produto };
+    if (idx > -1) prods[idx] = produto;
   } else {
-    produto.id = Date.now();
     prods.push(produto);
   }
-  saveProducts(prods);
+  saveProductsToStorage(prods);
   renderProductsTable(prods);
   closeProductForm();
   showAdminToast(editId ? 'Produto atualizado!' : 'Produto criado!');
 }
 
-async function deleteProduct(id) {
+function deleteProduct(id) {
   if (!confirm('Excluir este produto?')) return;
-  const url = getProductsUrl();
-
-  if (url) {
-    try {
-      await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'excluir', id })
-      });
-    } catch (err) {
-      console.log('Erro ao excluir produto remoto:', err);
-    }
-  }
-
-  let prods = await getProducts();
+  let prods = getProductsFromStorage();
   prods = prods.filter(p => p.id !== id);
-  saveProducts(prods);
+  saveProductsToStorage(prods);
   renderProductsTable(prods);
   showAdminToast('Produto excluído');
 }
@@ -230,11 +223,9 @@ async function deleteProduct(id) {
 function loadPedidos(filter) {
   let pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
   pedidos.sort((a, b) => b.id - a.id);
-
   if (filter && filter !== 'todos') {
     pedidos = pedidos.filter(p => p.status === filter);
   }
-
   renderPedidos(pedidos);
 }
 
@@ -246,14 +237,12 @@ function filterPedidos(status) {
 
 function renderPedidos(pedidos) {
   const container = document.getElementById('pedidosList');
-
   if (pedidos.length === 0) {
     container.innerHTML = '<p class="hint-text">Nenhum pedido encontrado.</p>';
     return;
   }
-
   container.innerHTML = pedidos.map(p => {
-    const data = new Date(p.data).toLocaleString('pt-BR');
+    const data = new Date(p.data || p.created_at).toLocaleString('pt-BR');
     const itensStr = (p.itens || []).map(i => `${i.quantidade}x ${i.nome}`).join(', ');
     return `
       <div class="pedido-card">
@@ -262,15 +251,15 @@ function renderPedidos(pedidos) {
           <span class="pedido-status status-${p.status}">${p.status}</span>
         </div>
         <div class="pedido-data">${data}</div>
-        <div class="pedido-cliente">👤 ${p.cliente?.nome || 'N/A'} · 📱 ${p.cliente?.telefone || 'N/A'}</div>
+        <div class="pedido-cliente">👤 ${p.cliente?.nome || 'N/A'} · 📱 ${p.cliente?.telefone || ''}</div>
         <div class="pedido-itens">📋 ${itensStr || 'Sem itens'}</div>
         <div class="pedido-total">Total: R$ ${(p.total || 0).toFixed(2)}</div>
         <div class="pedido-actions">
           <select onchange="updatePedidoStatus(${p.id}, this.value)">
-            <option value="confirmado" ${p.status==='confirmado'?'selected':''}>Confirmado</option>
-            <option value="preparando" ${p.status==='preparando'?'selected':''}>Preparando</option>
-            <option value="entrega" ${p.status==='entrega'?'selected':''}>Saiu p/ Entrega</option>
-            <option value="entregue" ${p.status==='entregue'?'selected':''}>Entregue</option>
+            <option value="confirmado" ${p.status==='confirmado'?'selected':''}>✅ Confirmado</option>
+            <option value="preparando" ${p.status==='preparando'?'selected':''}>👨‍🍳 Preparando</option>
+            <option value="entrega" ${p.status==='entrega'?'selected':''}>🛵 Saiu p/ Entrega</option>
+            <option value="entregue" ${p.status==='entregue'?'selected':''}>✔️ Entregue</option>
           </select>
         </div>
       </div>
@@ -289,27 +278,110 @@ function updatePedidoStatus(pedidoId, newStatus) {
 }
 
 // ========================================
-// PAGAMENTOS CONFIG
+// PROMOÇÕES
 // ========================================
-function loadPaymentConfig() {
-  const cfg = JSON.parse(localStorage.getItem('payment_config') || '{}');
-  document.getElementById('payPix').checked = cfg.pix !== false;
-  document.getElementById('payCredito').checked = cfg.credito !== false;
-  document.getElementById('payDebito').checked = cfg.debito !== false;
-  document.getElementById('payDinheiro').checked = cfg.dinheiro !== false;
-  document.getElementById('pixKey').value = cfg.pixKey || '';
+function getPromos() {
+  return JSON.parse(localStorage.getItem('promocoes') || '[]');
 }
 
-function savePaymentConfig() {
-  const cfg = {
-    pix: document.getElementById('payPix').checked,
-    credito: document.getElementById('payCredito').checked,
-    debito: document.getElementById('payDebito').checked,
-    dinheiro: document.getElementById('payDinheiro').checked,
-    pixKey: document.getElementById('pixKey').value.trim()
+function savePromos(promos) {
+  localStorage.setItem('promocoes', JSON.stringify(promos));
+}
+
+function loadPromos() {
+  const promos = getPromos();
+  renderPromos(promos);
+}
+
+function renderPromos(promos) {
+  const container = document.getElementById('promosList');
+  if (promos.length === 0) {
+    container.innerHTML = '<p class="hint-text">Nenhuma promoção cadastrada.</p>';
+    return;
+  }
+  container.innerHTML = promos.map(p => `
+    <div class="pedido-card" style="border-left:4px solid var(--yellow);">
+      <div class="pedido-card-header">
+        <span class="pedido-id">🎉 ${p.titulo}</span>
+        <span class="pedido-status ${p.ativo ? 'status-entregue' : 'status-confirmado'}">${p.ativo ? 'Ativa' : 'Inativa'}</span>
+      </div>
+      <div class="pedido-itens">${p.descricao || ''}</div>
+      <div class="pedido-cliente">Tipo: ${p.tipo} | Valor: ${p.tipo === 'percentual' ? p.valor + '%' : 'R$ ' + p.valor} ${p.codigo ? '| Código: ' + p.codigo : ''}</div>
+      <div class="pedido-actions">
+        <button class="btn-edit" onclick="editPromo(${p.id})">✏️</button>
+        <button class="btn-delete" onclick="deletePromo(${p.id})">🗑️</button>
+        <button class="btn-secondary" onclick="togglePromo(${p.id})">${p.ativo ? 'Desativar' : 'Ativar'}</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openPromoForm() {
+  document.getElementById('promoForm').style.display = 'block';
+  document.getElementById('promoFormTitle').textContent = 'Nova Promoção';
+  document.getElementById('promoEditId').value = '';
+  document.getElementById('promoTitulo').value = '';
+  document.getElementById('promoDesc').value = '';
+  document.getElementById('promoTipo').value = 'percentual';
+  document.getElementById('promoValor').value = '';
+  document.getElementById('promoCodigo').value = '';
+}
+
+function closePromoForm() {
+  document.getElementById('promoForm').style.display = 'none';
+}
+
+function editPromo(id) {
+  const promos = getPromos();
+  const p = promos.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('promoForm').style.display = 'block';
+  document.getElementById('promoFormTitle').textContent = 'Editar Promoção';
+  document.getElementById('promoEditId').value = p.id;
+  document.getElementById('promoTitulo').value = p.titulo;
+  document.getElementById('promoDesc').value = p.descricao || '';
+  document.getElementById('promoTipo').value = p.tipo;
+  document.getElementById('promoValor').value = p.valor;
+  document.getElementById('promoCodigo').value = p.codigo || '';
+}
+
+function savePromo() {
+  const promos = getPromos();
+  const editId = document.getElementById('promoEditId').value;
+  const promo = {
+    id: editId ? parseInt(editId) : Date.now(),
+    titulo: document.getElementById('promoTitulo').value,
+    descricao: document.getElementById('promoDesc').value,
+    tipo: document.getElementById('promoTipo').value,
+    valor: parseFloat(document.getElementById('promoValor').value),
+    codigo: document.getElementById('promoCodigo').value.toUpperCase(),
+    ativo: true
   };
-  localStorage.setItem('payment_config', JSON.stringify(cfg));
-  showAdminToast('Config de pagamento salva!');
+  if (editId) {
+    const idx = promos.findIndex(p => p.id === parseInt(editId));
+    if (idx > -1) promos[idx] = { ...promos[idx], ...promo };
+  } else {
+    promos.push(promo);
+  }
+  savePromos(promos);
+  renderPromos(promos);
+  closePromoForm();
+  showAdminToast('Promoção salva!');
+}
+
+function deletePromo(id) {
+  if (!confirm('Excluir promoção?')) return;
+  let promos = getPromos().filter(p => p.id !== id);
+  savePromos(promos);
+  renderPromos(promos);
+}
+
+function togglePromo(id) {
+  const promos = getPromos();
+  const p = promos.find(x => x.id === id);
+  if (p) p.ativo = !p.ativo;
+  savePromos(promos);
+  renderPromos(promos);
 }
 
 // ========================================
@@ -323,7 +395,6 @@ function showAdminToast(msg) {
   setTimeout(() => toast.remove(), 3000);
 }
 
-// Init
 document.addEventListener('DOMContentLoaded', () => {
   if (localStorage.getItem('admin_logged') === 'true') {
     showAdmin();
