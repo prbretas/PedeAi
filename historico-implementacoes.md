@@ -98,3 +98,15 @@
   - CRUD de entregadores (nome + valor por entrega)
   - Resumo de pagamentos a entregadores (baseado em entregas feitas)
 - Hero section usa imagem de capa dinâmica com overlay escuro para legibilidade
+
+## v4.3 - Bugs e correções do fluxo de pedidos (concluído)
+
+- Fix: categorias agora aparecem na loja (usa categorias salvas + as dos produtos)
+- Fix: pedidos chegam como "pendente" (admin precisa aprovar → "confirmado")
+- Fix: WhatsApp agora é enviado pelo admin ao confirmar pedido (não mais pelo cliente)
+- Novo: filtro de pedidos por data no admin (input date)
+- Novo: botão de filtro "Pendentes" nos pedidos
+- Novo: auto-refresh dos pedidos a cada 60 segundos
+- Novo: nome dinâmico no h1 do admin ("Admin PedeAí - Hotdog da Joana")
+- Novo: status "pendente" com badge visual
+- Fix: cache de produtos é invalidado ao trocar categoria

@@ -1,4 +1,4 @@
-# Setup do Supabase - PedeAí
+# Setup do Supabase - PedeAI
 
 ## 1. Criar conta e projeto
 

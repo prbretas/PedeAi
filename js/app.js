@@ -140,13 +140,17 @@ async function renderProducts(filterCat) {
 function renderCategoryFilter(produtos) {
   const container = document.getElementById('categoryFilter');
   if (!container) return;
-  const cats = [...new Set(produtos.map(p => p.categoria))];
+  // Usa categorias salvas no admin + as que existem nos produtos
+  const savedCats = JSON.parse(localStorage.getItem('categorias') || '[]');
+  const productCats = [...new Set(produtos.map(p => p.categoria).filter(Boolean))];
+  const allCats = [...new Set([...savedCats, ...productCats])];
   container.innerHTML = `<button class="cat-btn ${currentCategory === 'todos' ? 'active' : ''}" onclick="filterByCategory('todos')">Todos</button>` +
-    cats.map(c => `<button class="cat-btn ${currentCategory === c ? 'active' : ''}" onclick="filterByCategory('${c}')">${c.charAt(0).toUpperCase() + c.slice(1)}</button>`).join('');
+    allCats.map(c => `<button class="cat-btn ${currentCategory === c ? 'active' : ''}" onclick="filterByCategory('${c}')">${c.charAt(0).toUpperCase() + c.slice(1)}</button>`).join('');
 }
 
 function filterByCategory(cat) {
   currentCategory = cat;
+  PRODUTOS_CACHE = []; // Limpa cache para forçar reload
   renderProducts(cat);
 }
 
@@ -359,7 +363,7 @@ async function submitOrder(e) {
   // Salvar localmente
   const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
   pedido.id = Date.now();
-  pedido.status = 'confirmado';
+  pedido.status = 'pendente';
   pedidos.push(pedido);
   localStorage.setItem('pedidos', JSON.stringify(pedidos));
 
@@ -405,9 +409,7 @@ function showOrderConfirmation(pedido) {
     </div>
   `;
   modal.classList.add('active');
-
-  // Enviar mensagem WhatsApp se configurado
-  sendWhatsAppConfirmation(pedido, emp);
+  // WhatsApp agora é enviado pelo admin ao confirmar o pedido
 }
 
 function closeConfirm() {
@@ -443,7 +445,7 @@ function sendWhatsAppConfirmation(pedido, emp) {
     `${pagamentoInfo}\n` +
     `${pedido.entrega === 'entrega' ? '🛵 Entrega em: ' + pedido.cliente.endereco : '🏪 Retirada na loja'}\n\n` +
     `Tempo estimado: ${emp.tempo_entrega || '30-45 min'}\n\n` +
-    `_${emp.nome || 'PedeAí'} - Obrigado pelo pedido!_`;
+    `_${emp.nome || 'PedeAI'} - Obrigado pelo pedido!_`;
 
   const whatsUrl = `https://wa.me/55${telefoneCliente}?text=${encodeURIComponent(mensagem)}`;
   
@@ -501,7 +503,7 @@ async function sendChat() {
       body: JSON.stringify({
         mensagem: text,
         historico: chatHistory,
-        empresa: emp.nome || 'PedeAí',
+        empresa: emp.nome || 'PedeAI',
         empresa_config: empresaConfig,
         carrinho: cart.map(i => `${i.qty}x ${i.nome}`).join(', ') || 'vazio'
       })

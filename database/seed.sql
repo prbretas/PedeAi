@@ -1,5 +1,5 @@
 -- ================================================
--- DADOS INICIAIS - PedeAí
+-- DADOS INICIAIS - PedeAI
 -- Executar após o schema.sql no Supabase
 -- ================================================
 

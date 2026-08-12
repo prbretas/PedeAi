@@ -33,6 +33,16 @@ function showAdmin() {
   loadPromos();
   loadCategorias();
   loadGestao();
+  // Atualizar nome no h1 do admin
+  updateAdminTitle();
+}
+
+function updateAdminTitle() {
+  const emp = JSON.parse(localStorage.getItem('empresa_config') || '{}');
+  const h1 = document.querySelector('.admin-brand h1');
+  if (h1 && emp.nome) {
+    h1.textContent = `Admin PedeAí - ${emp.nome}`;
+  }
 }
 
 // ========================================
@@ -96,6 +106,7 @@ function saveEmpresa() {
     debito: emp.aceita_debito, dinheiro: emp.aceita_dinheiro,
     pixKey: emp.chave_pix
   }));
+  updateAdminTitle();
   showAdminToast('Empresa salva! O site será atualizado.');
 }
 
@@ -301,6 +312,17 @@ function deleteCat(idx) {
 function loadPedidos(filter) {
   let pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
   pedidos.sort((a, b) => b.id - a.id);
+
+  // Filtro por data (hoje por padrão)
+  const dateFilter = document.getElementById('pedidoDateFilter');
+  if (dateFilter && dateFilter.value) {
+    const selectedDate = dateFilter.value;
+    pedidos = pedidos.filter(p => {
+      const pDate = new Date(p.data || p.created_at).toISOString().split('T')[0];
+      return pDate === selectedDate;
+    });
+  }
+
   if (filter && filter !== 'todos') {
     pedidos = pedidos.filter(p => p.status === filter);
   }
@@ -311,6 +333,10 @@ function filterPedidos(status) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
   loadPedidos(status);
+}
+
+function filterPedidosByDate() {
+  loadPedidos();
 }
 
 function renderPedidos(pedidos) {
@@ -334,6 +360,7 @@ function renderPedidos(pedidos) {
         <div class="pedido-total">Total: R$ ${(p.total || 0).toFixed(2)}</div>
         <div class="pedido-actions">
           <select onchange="updatePedidoStatus(${p.id}, this.value)">
+            <option value="pendente" ${p.status==='pendente'?'selected':''}>⏳ Pendente</option>
             <option value="confirmado" ${p.status==='confirmado'?'selected':''}>✅ Confirmado</option>
             <option value="preparando" ${p.status==='preparando'?'selected':''}>👨‍🍳 Preparando</option>
             <option value="entrega" ${p.status==='entrega'?'selected':''}>🛵 Saiu p/ Entrega</option>
@@ -349,10 +376,40 @@ function updatePedidoStatus(pedidoId, newStatus) {
   const pedidos = JSON.parse(localStorage.getItem('pedidos') || '[]');
   const pedido = pedidos.find(p => p.id === pedidoId);
   if (pedido) {
+    const oldStatus = pedido.status;
     pedido.status = newStatus;
     localStorage.setItem('pedidos', JSON.stringify(pedidos));
     showAdminToast(`Pedido #${pedidoId} → ${newStatus}`);
+
+    // Se mudou de pendente para confirmado, envia WhatsApp
+    if (oldStatus === 'pendente' && newStatus === 'confirmado') {
+      const emp = JSON.parse(localStorage.getItem('empresa_config') || '{}');
+      sendWhatsAppFromAdmin(pedido, emp);
+    }
   }
+}
+
+function sendWhatsAppFromAdmin(pedido, emp) {
+  const telefone = pedido.cliente?.telefone?.replace(/\D/g, '');
+  if (!telefone || telefone.length < 10) return;
+
+  const dataFormatada = new Date(pedido.data).toLocaleString('pt-BR');
+  const itensTexto = (pedido.itens || []).map(i => `  • ${i.quantidade}x ${i.nome} - R$ ${i.subtotal.toFixed(2)}`).join('\n');
+  
+  let pagInfo = `Pagamento: ${(pedido.pagamento || '').toUpperCase()}`;
+  if (pedido.pagamento === 'pix' && emp.chave_pix) pagInfo += `\nChave PIX: ${emp.chave_pix}`;
+  if (pedido.pagamento === 'dinheiro' && pedido.troco_para) pagInfo += `\nTroco para: R$ ${pedido.troco_para.toFixed(2)}`;
+
+  const msg = `✅ *Pedido Confirmado!*\n\n` +
+    `📋 *Pedido #${pedido.id}*\n📅 ${dataFormatada}\n\n` +
+    `*Itens:*\n${itensTexto}\n\n` +
+    `*Total: R$ ${(pedido.total || 0).toFixed(2)}*\n\n` +
+    `${pagInfo}\n` +
+    `${pedido.entrega === 'entrega' ? '🛵 Entrega: ' + (pedido.cliente?.endereco || '') : '🏪 Retirada na loja'}\n\n` +
+    `Tempo estimado: ${emp.tempo_entrega || '30-45 min'}\n\n` +
+    `_${emp.nome || 'PedeAí'} - Obrigado!_`;
+
+  window.open(`https://wa.me/55${telefone}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 // ========================================
@@ -568,4 +625,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (localStorage.getItem('admin_logged') === 'true') {
     showAdmin();
   }
+
+  // Auto-refresh pedidos a cada 60 segundos
+  setInterval(() => {
+    if (document.getElementById('tab-pedidos')?.classList.contains('active')) {
+      loadPedidos();
+    }
+  }, 60000);
 });

@@ -219,6 +219,7 @@
   font-weight: 700;
 }
 
+.status-pendente { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
 .status-confirmado { background: var(--yellow-light); color: #856404; }
 .status-preparando { background: #ffe4cc; color: #c2410c; }
 .status-entrega { background: #e8e4f8; color: #6c3aed; }
