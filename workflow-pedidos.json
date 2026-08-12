@@ -28,12 +28,12 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/clientes",
+        "url": "=COLE_SUA_SUPABASE_URL/rest/v1/clientes",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
-            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "apikey", "value": "=COLE_SUA_SUPABASE_KEY" },
+            { "name": "Authorization", "value": "=Bearer COLE_SUA_SUPABASE_KEY" },
             { "name": "Content-Type", "value": "application/json" },
             { "name": "Prefer", "value": "return=representation,resolution=merge-duplicates" }
           ]
@@ -62,12 +62,12 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/pedidos",
+        "url": "=COLE_SUA_SUPABASE_URL/rest/v1/pedidos",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
-            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "apikey", "value": "=COLE_SUA_SUPABASE_KEY" },
+            { "name": "Authorization", "value": "=Bearer COLE_SUA_SUPABASE_KEY" },
             { "name": "Content-Type", "value": "application/json" },
             { "name": "Prefer", "value": "return=representation" }
           ]
@@ -96,12 +96,12 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/pedido_itens",
+        "url": "=COLE_SUA_SUPABASE_URL/rest/v1/pedido_itens",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
-            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "apikey", "value": "=COLE_SUA_SUPABASE_KEY" },
+            { "name": "Authorization", "value": "=Bearer COLE_SUA_SUPABASE_KEY" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },

@@ -28,12 +28,12 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/produtos?ativo=eq.true&order=categoria,nome",
+        "url": "=COLE_SUA_SUPABASE_URL/rest/v1/produtos?ativo=eq.true&order=categoria,nome",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
-            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" }
+            { "name": "apikey", "value": "=COLE_SUA_SUPABASE_KEY" },
+            { "name": "Authorization", "value": "=Bearer COLE_SUA_SUPABASE_KEY" }
           ]
         },
         "options": {}
@@ -47,12 +47,12 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/produtos",
+        "url": "=COLE_SUA_SUPABASE_URL/rest/v1/produtos",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
-            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "apikey", "value": "=COLE_SUA_SUPABASE_KEY" },
+            { "name": "Authorization", "value": "=Bearer COLE_SUA_SUPABASE_KEY" },
             { "name": "Content-Type", "value": "application/json" },
             { "name": "Prefer", "value": "return=representation" }
           ]
@@ -71,12 +71,12 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/produtos?id=eq.{{$json.id}}",
+        "url": "=COLE_SUA_SUPABASE_URL/rest/v1/produtos?id=eq.{{$json.id}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
-            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "apikey", "value": "=COLE_SUA_SUPABASE_KEY" },
+            { "name": "Authorization", "value": "=Bearer COLE_SUA_SUPABASE_KEY" },
             { "name": "Content-Type", "value": "application/json" },
             { "name": "Prefer", "value": "return=representation" }
           ]
@@ -95,12 +95,12 @@
     {
       "parameters": {
         "method": "PATCH",
-        "url": "={{$env.SUPABASE_URL}}/rest/v1/produtos?id=eq.{{$json.id}}",
+        "url": "=COLE_SUA_SUPABASE_URL/rest/v1/produtos?id=eq.{{$json.id}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{$env.SUPABASE_KEY}}" },
-            { "name": "Authorization", "value": "=Bearer {{$env.SUPABASE_KEY}}" },
+            { "name": "apikey", "value": "=COLE_SUA_SUPABASE_KEY" },
+            { "name": "Authorization", "value": "=Bearer COLE_SUA_SUPABASE_KEY" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },

@@ -95,20 +95,9 @@ O site (HTML) é quem chama cada webhook conforme a ação do usuário.
 
 ## ETAPA 3: Configurar o n8n (Workflows)
 
-### 3.1 Criar variáveis de ambiente no n8n
+### 3.1 Importar os 3 workflows e configurar credenciais
 
-**IMPORTANTE: Faça isso ANTES de importar os workflows!**
-
-1. No n8n, vá em **Settings** (engrenagem no canto inferior esquerdo)
-2. Clique em **Variables**
-3. Crie as variáveis:
-
-| Nome | Valor |
-|------|-------|
-| `SUPABASE_URL` | `https://mwfjicgnxcvhcgamkskd.supabase.co` |
-| `SUPABASE_KEY` | Sua anon key (eyJ...) |
-
-### 3.2 Importar os 3 workflows
+**NÃO precisa de variáveis de ambiente.** As credenciais são colocadas diretamente nos nós.
 
 Cada workflow é um arquivo JSON independente. Importe um por vez:
 
@@ -123,13 +112,15 @@ Cada workflow é um arquivo JSON independente. Importe um por vez:
 
 **Workflow 2 — Pedidos**
 1. Importe: `workflow-pedidos.json`
-2. Nenhuma configuração extra necessária (usa as variáveis de ambiente)
+2. Use **Ctrl+H** (Find & Replace) ou edite manualmente cada nó HTTP Request:
+   - Substitua `COLE_SUA_SUPABASE_URL` → `https://mwfjicgnxcvhcgamkskd.supabase.co`
+   - Substitua `COLE_SUA_SUPABASE_KEY` → sua anon key (eyJ...)
 3. **Ative o workflow**
 4. Copie a **Production URL** (ex: `https://...n8n.cloud/webhook/pedido`)
 
 **Workflow 3 — Produtos (API CRUD)**
 1. Importe: `workflow-produtos-api.json`
-2. Nenhuma configuração extra necessária
+2. Mesma coisa: substitua os placeholders pela URL e key do Supabase
 3. **Ative o workflow**
 4. Copie a **Production URL** (ex: `https://...n8n.cloud/webhook/produtos`)
 
@@ -213,8 +204,11 @@ Acesse: **http://localhost:8080**
 │  Groq (gsk_...)     → nó "Chamar Groq LLM"     │
 │                       no workflow do chatbot     │
 │                                                  │
-│  Supabase URL       → variável n8n SUPABASE_URL │
-│  Supabase Key       → variável n8n SUPABASE_KEY │
+│  Supabase URL       → nos nós HTTP Request dos  │
+│  Supabase Key         workflows pedidos e        │
+│                       produtos (substituir       │
+│                       COLE_SUA_SUPABASE_URL e    │
+│                       COLE_SUA_SUPABASE_KEY)     │
 │                                                  │
 │  Production URLs    → admin.html (aba Config)    │
 │  dos 3 webhooks       salva no localStorage      │
@@ -259,7 +253,7 @@ PedeAí/
 | "Failed to fetch" | Workflow inativo ou CORS | Ative o workflow. Se persistir, adicione header `Access-Control-Allow-Origin: *` no nó Webhook |
 | Produtos não carregam | URL do webhook errada | Verifique a URL no admin → Config |
 | Chatbot repete saudação | Sem histórico | Use via localhost (não file://) |
-| Pedido não salva no Supabase | Variáveis n8n erradas | Confirme SUPABASE_URL e SUPABASE_KEY em Settings → Variables |
+| Pedido não salva no Supabase | Credenciais erradas nos nós | Verifique se substituiu COLE_SUA_SUPABASE_URL e COLE_SUA_SUPABASE_KEY corretamente |
 | Erro 401 no Supabase | Key inválida | Copie novamente a anon key do Supabase |
 
 ---
